@@ -71,9 +71,9 @@ public class Diagnostico {
 		String user = "bddx";
 		String pass = "bddx_pwd";
 		String url= "jdbc:mysql://"+ serverAddress+"/"+db;
-		Connection conn = DriverManager.getConnection(url, user, pass);
+		conn = DriverManager.getConnection(url, user, pass);
 		System.out.println("Conectado a la base de datos!");
-		conn.close();
+	
 		
 	}
 
@@ -85,6 +85,7 @@ public class Diagnostico {
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
+		conn.close();
 		
 	}
 
