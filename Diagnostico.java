@@ -80,8 +80,7 @@ public class Diagnostico {
 	private void crearBD() {
 		try {
 			conectar();
-			String nombre = "DIAGNOSTICO";
-			st.executeUpdate("CREATE DATABASE " + nombre);
+			st.executeUpdate("CREATE SCHEMA `diagnostico` ; ");
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
