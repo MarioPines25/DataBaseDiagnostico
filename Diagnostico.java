@@ -161,4 +161,32 @@ public class Diagnostico {
 		new Diagnostico().showMenu();
 	}
 }
- 
+/*
+private ArrayList<String> getNombresActores() throws Exception {
+		String drv = "com.mysql.jdbc.Driver";
+		Class.forName(drv);
+
+		String serverAddress = "localhost:3306";
+		String db = "sakila";
+		String user = "bd";
+		String pass = "bdupm";
+		String url = "jdbc:mysql://" + serverAddress + "/" + db;
+		Connection conn = DriverManager.getConnection(url, user, pass);
+		System.out.println("Conectado a la base de datos!");
+
+		Statement st = conn.createStatement();
+		ResultSet rs = st.executeQuery("SELECT * FROM actor");
+		System.out.println("Query ejecutada!");
+		
+		ArrayList<String> ret = new ArrayList<String>();
+		while (rs.next()) {
+			String firstName = rs.getString("first_name");
+			ret.add(firstName);
+		}
+		rs.close();
+		st.close();
+		conn.close();
+		
+		return ret;
+	}
+ */
