@@ -3,6 +3,7 @@ import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.*;
+// import tu mama ...
 
 public class Diagnostico {
 
