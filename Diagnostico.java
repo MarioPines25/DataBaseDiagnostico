@@ -61,12 +61,19 @@ public class Diagnostico {
 	}
 	
 	private void conectar() {
-		try {
-			conn = DriverManager.getConnection("com.mysql.jdbc.Driver");
-			st = conn.createStatement();
-		}catch(SQLException ex) {
-			System.err.println(ex.getMessage());
-		}
+		// implementar
+		String drv="com.mysql.jdbc.Driver";
+		Class.forName(drv);
+		
+		/* conexion a la BD */
+		String serverAddress="localhost:3306";
+		String db= "diagnostico";
+		String user = "bddx";
+		String pass = "bddx_pwd";
+		String url= "jdbc:mysql://"+ serverAddress+"/"+db;
+		Connection conn = DriverManager.getConnection(url, user, pass);
+		System.out.println("Conectado a la base de datos!");
+		conn.close();
 		
 	}
 
