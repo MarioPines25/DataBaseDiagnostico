@@ -124,14 +124,22 @@ public class Diagnostico {
 	}
 
 	private void mostrarEstadisticasBD() {
-		String numEnfermedades= "SELECT COUNT(*)"
-				+ "FROM Disease;";
-		String numSintomas= "SELECT COUNT (*)"
-				+ "FROM Symptom;";
-		String maxSympEnf= "SELECT (disease.id) "
-				+ "FROM DiseaseSympton WHERE COUNT (*);";
-				
-	}
+			String numEnfermedades= "SELECT COUNT(disease.disease_id)"
+					+ "FROM Disease;";
+			String numSintomas= "SELECT COUNT (symptom.cui)"
+					+ "FROM Symptom;";
+			String maxSympEnf= "SELECT COUNT (disease.disease_id) "
+					+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
+			String minSympEnf= "SELECT COUNT (disease.disease_id) "
+					+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
+			String avgSymp= "SELECT COUNT (disease.disease_id)"
+					+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
+			String semTypes= "SELECT (semantic.semantic_type_id)"
+					+ "FROM Semantic";
+			String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
+					+ "FROM Semantic;";		
+			
+		}
 
 	/**
 	 * M�todo para leer n�meros enteros de teclado.
