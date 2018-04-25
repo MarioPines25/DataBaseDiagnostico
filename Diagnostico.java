@@ -89,41 +89,65 @@ public class Diagnostico {
 	}
 
 	private void realizarDiagnostico() {
-		// implementar
-	}
+			int nMax = 0;
+			listarSintomasCui();
+			Scanner scanner = new Scanner (System.in);
+			String[]numMax = new String[0];
+			System.out.println("Ingrese cod_sintoma: ");
+			for(int i = 0; i < numMax.length; i++) {
+				String entrada = scanner.nextLine();
+				numMax[i] += entrada;
+				nMax++;
+				System.out.print("Ingresar otro sintoma?[s/n]");
+				String respuesta = scanner.nextLine();
+				if(respuesta.equals("n")) {
+					break;
+				}
+			}
+			
+			String list = "";
+			for (int i = 0; i < numMax.length-1; i++ ) {
+				list += numMax[i] + ", ";
+			}
+			list += numMax[numMax.length];
+			String sintomas = "SELECT symptom.nombre"
+					+ "FROM Symptom"
+					+ "WHERE sintomas = " + list + ";";
+		}
+		
+		private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
+			String str = "SELECT (symptom.name, symptom.cui) "
+					+ "FROM Symptom";
+		}
 
-	private void listarSintomasEnfermedad() {
-		String str = "SELECT (disease.name) "
-				+ "FROM Disease;";
-		Scanner scanner = new Scanner (System.in);
-		System.out.println("Ingrese Id de la enfermedad: ");
-		String entrada = scanner.nextLine();
-		String query = "SELECT (disease.id)"
-				+ "FROM Disease"
-				+ "WHERE disease_id =" + entrada +";";
-	}
+		private void listarSintomasEnfermedad() {
+			String str = "SELECT (disease.name) "
+					+ "FROM Disease;";
+			Scanner scanner = new Scanner (System.in);
+			System.out.println("Ingrese Id de la enfermedad: ");
+			String entrada = scanner.nextLine();
+			String query = "SELECT (disease.id)"
+					+ "FROM Disease"
+					+ "WHERE disease_id =" + entrada +";";
+		}
 
-	private void listarEnfermedadesYCodigosAsociados() {
-		String str = "SELECT (disease.name, code.code) "
-				+ "FROM Disease;";
-		Scanner scanner = new Scanner (System.in);
-		System.out.println("Ingrese Id de la enfermedad: ");
-		String entrada = scanner.nextLine();
-		String query = "SELECT (disease.name)"
-				+ "FROM Disease"
-				+ "WHERE disease_id =" + entrada;
-	}
+		private void listarEnfermedadesYCodigosAsociados() {
+			String str = "SELECT (disease.name, code.code) "
+					+ "FROM Disease;";
+			Scanner scanner = new Scanner (System.in);
+			System.out.println("Ingrese Id de la enfermedad: ");
+			String entrada = scanner.nextLine();
+			String query = "SELECT (disease.name)"
+					+ "FROM Disease"
+					+ "WHERE disease_id =" + entrada;
+		}
 
-	private void listarSintomasYTiposSemanticos() {
-		String str = "SELECT (symptom.name) "
-				+ "FROM Symptom";
-		//Scanner scanner = new Scanner (System.in);
-		String query = "SELECT (disease.id)"
-				+ "FROM Disease"
-				+ "WHERE disease_id =";
-	}
+		private void listarSintomasYTiposSemanticos() { //revisar
+			String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
+					+ "FROM Symptom";
+		}
 
-	private void mostrarEstadisticasBD() {
+		private void mostrarEstadisticasBD() {
 			String numEnfermedades= "SELECT COUNT(disease.disease_id)"
 					+ "FROM Disease;";
 			String numSintomas= "SELECT COUNT (symptom.cui)"
