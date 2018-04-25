@@ -3,7 +3,7 @@ import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.*;
-// import tu mama ... LA TUYA
+
 
 public class Diagnostico {
 
@@ -93,19 +93,44 @@ public class Diagnostico {
 	}
 
 	private void listarSintomasEnfermedad() {
-		// implementar
+		String str = "SELECT (disease.name) "
+				+ "FROM Disease;";
+		Scanner scanner = new Scanner (System.in);
+		System.out.println("Ingrese Id de la enfermedad: ");
+		String entrada = scanner.nextLine();
+		String query = "SELECT (disease.id)"
+				+ "FROM Disease"
+				+ "WHERE disease_id =" + entrada +";";
 	}
 
 	private void listarEnfermedadesYCodigosAsociados() {
-		// implementar
+		String str = "SELECT (disease.name, code.code) "
+				+ "FROM Disease;";
+		Scanner scanner = new Scanner (System.in);
+		System.out.println("Ingrese Id de la enfermedad: ");
+		String entrada = scanner.nextLine();
+		String query = "SELECT (disease.name)"
+				+ "FROM Disease"
+				+ "WHERE disease_id =" + entrada;
 	}
 
 	private void listarSintomasYTiposSemanticos() {
-		// implementar
+		String str = "SELECT (symptom.name) "
+				+ "FROM Symptom";
+		//Scanner scanner = new Scanner (System.in);
+		String query = "SELECT (disease.id)"
+				+ "FROM Disease"
+				+ "WHERE disease_id =";
 	}
 
 	private void mostrarEstadisticasBD() {
-		// implementar
+		String numEnfermedades= "SELECT COUNT(*)"
+				+ "FROM Disease;";
+		String numSintomas= "SELECT COUNT (*)"
+				+ "FROM Symptom;";
+		String maxSympEnf= "SELECT (disease.id) "
+				+ "FROM DiseaseSympton WHERE COUNT (*);";
+				
 	}
 
 	/**
