@@ -1,5 +1,6 @@
 import java.io.InputStreamReader;
 import java.util.LinkedList;
+import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.*;
@@ -59,12 +60,12 @@ public class Diagnostico {
 		System.out.println("Saliendo.. �hasta otra!");
 		System.exit(0);
 	}
-	
-	private void conectar() {
+
+	private void conectar() throws Exception {
 		// implementar
 		String drv="com.mysql.jdbc.Driver";
 		Class.forName(drv);
-		
+
 		/* conexion a la BD */
 		String serverAddress="localhost:3306";
 		String db= "diagnostico";
@@ -73,97 +74,143 @@ public class Diagnostico {
 		String url= "jdbc:mysql://"+ serverAddress+"/"+db;
 		conn = DriverManager.getConnection(url, user, pass);
 		System.out.println("Conectado a la base de datos!");
-	
-		
+
+
 	}
 
-	private void crearBD() {
+	private void crearBD() throws Exception{
 		try {
 			conectar();
 			st.executeUpdate("CREATE SCHEMA `diagnostico` ; ");
+			LinkedList<String> list = readData();
+			String []enfermedades;
+			String []codVoc;
+			String []codigo;
+			String[]enfSint;//array de enfermedades y sintomas
+
+
+			for (int i = 0; i < list.size(); i++) {
+				enfSint = list.get(i).split("=",2);
+				//COMIENZO PARTE IZQUIERDA ARBOL
+				enfermedades=enfSint[0].split(":");
+				codVoc=enfermedades[1].split(";");
+
+				for(int j=0;i<codVoc.length;j++){
+					//conseguimos codigos y vocabularios
+					codigo=codVoc[i].split("@");
+				}
+				//FIN PARTE IZQUIERDA ARBOL
+				//COMIENZO PARTE DERECHA ARBOL
+				String [] sintomas;
+				String [] elementos;
+				sintomas = enfSint[1].split(";");
+				for (int j=0; i<sintomas.length;j++){
+					//System.out.println(sintomas[i]);
+					elementos= sintomas[j].split(":");
+					for (int z=0; j< elementos.length;z++){
+						//datos= elementos[j].split(":");
+						System.out.println(elementos[z]); 
+					}
+				}
+			}
+
+
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 		conn.close();
-		
+
+	}
+	private int numMaxSyntom() {
+		return 0;//devuelve el numero de sintomas de la enfermedad con mas sintomas
 	}
 
-	private void realizarDiagnostico() {
-			int nMax = 0;
-			listarSintomasCui();
-			Scanner scanner = new Scanner (System.in);
-			String[]numMax = new String[0];
-			System.out.println("Ingrese cod_sintoma: ");
-			for(int i = 0; i < numMax.length; i++) {
-				String entrada = scanner.nextLine();
-				numMax[i] += entrada;
-				nMax++;
-				System.out.print("Ingresar otro sintoma?[s/n]");
-				String respuesta = scanner.nextLine();
-				if(respuesta.equals("n")) {
-					break;
-				}
+	private void realizarDiagnostico() throws Exception{
+		int n = 0;
+		listarSintomasCui();
+		Scanner scanner = new Scanner (System.in);
+		String[]numMax = new String[numMaxSyntom()];
+		System.out.println("Ingrese cod_sintoma: ");
+		for(int i = 0; i < numMax.length; i++) {
+			String entrada = scanner.nextLine();
+			numMax[i] += entrada;
+			System.out.print("Ingresar otro sintoma?[s/n]");
+			String respuesta = scanner.nextLine();
+			if(!respuesta.equals("n") || !respuesta.equals("s")) {
+				System.out.println("Introduce un sintoma");
+				i--;
 			}
-			
-			String list = "";
-			for (int i = 0; i < numMax.length-1; i++ ) {
+			if(respuesta.equals("n")) {
+				break;
+			}
+			else {
+				n++;
+			}	
+		}
+
+
+		String list = "";
+		if (n>2) {
+			for (int i = 0; i < n-2; i++ ) {
 				list += numMax[i] + ", ";
 			}
-			list += numMax[numMax.length];
-			String sintomas = "SELECT symptom.nombre"
-					+ "FROM Symptom"
-					+ "WHERE sintomas = " + list + ";";
 		}
-		
-		private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
-			String str = "SELECT (symptom.name, symptom.cui) "
-					+ "FROM Symptom";
-		}
+		list += numMax[n-1];
+		String sintomas = "SELECT symptom.nombre"
+				+ "FROM Symptom"
+				+ "WHERE sintomas = " + list + ";";
+		scanner.close();
+	}
 
-		private void listarSintomasEnfermedad() {
-			String str = "SELECT (disease.name) "
-					+ "FROM Disease;";
-			Scanner scanner = new Scanner (System.in);
-			System.out.println("Ingrese Id de la enfermedad: ");
-			String entrada = scanner.nextLine();
-			String query = "SELECT (disease.id)"
-					+ "FROM Disease"
-					+ "WHERE disease_id =" + entrada +";";
-		}
+	private void listarSintomasCui() {
+		String str = "SELECT (symptom.name, symptom.cui) "
+				+ "FROM Symptom";
+	}
 
-		private void listarEnfermedadesYCodigosAsociados() {
-			String str = "SELECT (disease.name, code.code) "
-					+ "FROM Disease;";
-			Scanner scanner = new Scanner (System.in);
-			System.out.println("Ingrese Id de la enfermedad: ");
-			String entrada = scanner.nextLine();
-			String query = "SELECT (disease.name)"
-					+ "FROM Disease"
-					+ "WHERE disease_id =" + entrada;
-		}
+	private void listarSintomasEnfermedad() {
+		String str = "SELECT (disease.name) "
+				+ "FROM Disease;";
+		Scanner scanner = new Scanner (System.in);
+		System.out.println("Ingrese Id de la enfermedad: ");
+		String entrada = scanner.nextLine();
+		String query = "SELECT (disease.id)"
+				+ "FROM Disease"
+				+ "WHERE disease_id =" + entrada +";";
+	}
 
-		private void listarSintomasYTiposSemanticos() { //revisar
-			String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
-					+ "FROM Symptom";
-		}
+	private void listarEnfermedadesYCodigosAsociados() {
+		String str = "SELECT (disease.name, code.code) "
+				+ "FROM Disease;";
+		Scanner scanner = new Scanner (System.in);
+		System.out.println("Ingrese Id de la enfermedad: ");
+		String entrada = scanner.nextLine();
+		String query = "SELECT (disease.name)"
+				+ "FROM Disease"
+				+ "WHERE disease_id =" + entrada;
+	}
 
-		private void mostrarEstadisticasBD() {
-			String numEnfermedades= "SELECT COUNT(disease.disease_id)"
-					+ "FROM Disease;";
-			String numSintomas= "SELECT COUNT (symptom.cui)"
-					+ "FROM Symptom;";
-			String maxSympEnf= "SELECT COUNT (disease.disease_id) "
-					+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
-			String minSympEnf= "SELECT COUNT (disease.disease_id) "
-					+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
-			String avgSymp= "SELECT COUNT (disease.disease_id)"
-					+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
-			String semTypes= "SELECT (semantic.semantic_type_id)"
-					+ "FROM Semantic";
-			String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
-					+ "FROM Semantic;";		
-			
-		}
+	private void listarSintomasYTiposSemanticos() { //revisar
+		String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
+				+ "FROM Symptom";
+	}
+
+	private void mostrarEstadisticasBD() {
+		String numEnfermedades= "SELECT COUNT(disease.disease_id)"
+				+ "FROM Disease;";
+		String numSintomas= "SELECT COUNT (symptom.cui)"
+				+ "FROM Symptom;";
+		String maxSympEnf= "SELECT COUNT (disease.disease_id) "
+				+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
+		String minSympEnf= "SELECT COUNT (disease.disease_id) "
+				+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
+		String avgSymp= "SELECT COUNT (disease.disease_id)"
+				+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
+		String semTypes= "SELECT (semantic.semantic_type_id)"
+				+ "FROM Semantic";
+		String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
+				+ "FROM Semantic;";		
+
+	}
 
 	/**
 	 * M�todo para leer n�meros enteros de teclado.
@@ -218,32 +265,3 @@ public class Diagnostico {
 		new Diagnostico().showMenu();
 	}
 }
-/*
-private ArrayList<String> getNombresActores() throws Exception {
-		String drv = "com.mysql.jdbc.Driver";
-		Class.forName(drv);
-
-		String serverAddress = "localhost:3306";
-		String db = "sakila";
-		String user = "bd";
-		String pass = "bdupm";
-		String url = "jdbc:mysql://" + serverAddress + "/" + db;
-		Connection conn = DriverManager.getConnection(url, user, pass);
-		System.out.println("Conectado a la base de datos!");
-
-		Statement st = conn.createStatement();
-		ResultSet rs = st.executeQuery("SELECT * FROM actor");
-		System.out.println("Query ejecutada!");
-		
-		ArrayList<String> ret = new ArrayList<String>();
-		while (rs.next()) {
-			String firstName = rs.getString("first_name");
-			ret.add(firstName);
-		}
-		rs.close();
-		st.close();
-		conn.close();
-		
-		return ret;
-	}
- */
