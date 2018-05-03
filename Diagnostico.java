@@ -162,54 +162,97 @@ public class Diagnostico {
 		scanner.close();
 	}
 
-	private void listarSintomasCui() {
-		String str = "SELECT (symptom.name, symptom.cui) "
-				+ "FROM Symptom";
+	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (symptom.name, symptom.cui) "
+					+ "FROM Symptom";
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
+		}
 	}
 
 	private void listarSintomasEnfermedad() {
-		String str = "SELECT (disease.name) "
-				+ "FROM Disease;";
-		Scanner scanner = new Scanner (System.in);
-		System.out.println("Ingrese Id de la enfermedad: ");
-		String entrada = scanner.nextLine();
-		String query = "SELECT (disease.id)"
-				+ "FROM Disease"
-				+ "WHERE disease_id =" + entrada +";";
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (disease.name) "
+					+ "FROM Disease;";
+			Scanner scanner = new Scanner (System.in);
+			System.out.println("Ingrese Id de la enfermedad: ");
+			String entrada = scanner.nextLine();
+			String query = "SELECT (disease.id)"
+					+ "FROM Disease"
+					+ "WHERE disease_id =" + entrada +";";
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
+		}
 	}
 
+
 	private void listarEnfermedadesYCodigosAsociados() {
-		String str = "SELECT (disease.name, code.code) "
-				+ "FROM Disease;";
-		Scanner scanner = new Scanner (System.in);
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (disease.name, code.code) "
+					+ "FROM Disease;";
+		} catch (SQLException ex) {
+			System.err.println(ex);
+		}
+		/*Scanner scanner = new Scanner (System.in);
 		System.out.println("Ingrese Id de la enfermedad: ");
 		String entrada = scanner.nextLine();
 		String query = "SELECT (disease.name)"
 				+ "FROM Disease"
-				+ "WHERE disease_id =" + entrada;
+				+ "WHERE disease_id =" + entrada;*/
 	}
 
 	private void listarSintomasYTiposSemanticos() { //revisar
-		String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
-				+ "FROM Symptom";
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
+					+ "FROM Symptom";
+			ResultSet rs = st.executeQuery(str);
+			
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
+		}
 	}
 
 	private void mostrarEstadisticasBD() {
+		try {
+		st = conn.createStatement();
+
 		String numEnfermedades= "SELECT COUNT(disease.disease_id)"
 				+ "FROM Disease;";
+		ResultSet rs = st.executeQuery(numEnfermedades);
+		
 		String numSintomas= "SELECT COUNT (symptom.cui)"
 				+ "FROM Symptom;";
+		rs = st.executeQuery(numSintomas);
+		
 		String maxSympEnf= "SELECT COUNT (disease.disease_id) "
 				+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
+		rs = st.executeQuery(maxSympEnf);
+		
 		String minSympEnf= "SELECT COUNT (disease.disease_id) "
 				+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
+		rs = st.executeQuery(minSympEnf);
+		
 		String avgSymp= "SELECT COUNT (disease.disease_id)"
 				+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
+		rs = st.executeQuery(avgSymp);
+		
 		String semTypes= "SELECT (semantic.semantic_type_id)"
 				+ "FROM Semantic";
+		rs = st.executeQuery(semTypes);
+		
 		String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
-				+ "FROM Semantic;";		
-
+				+ "FROM Semantic;";
+		rs = st.executeQuery(numSemTypes);
+		}
+		
+		catch(SQLException ex){
+			System.err.println(ex.getMessage());
+		}
 	}
 
 	/**
