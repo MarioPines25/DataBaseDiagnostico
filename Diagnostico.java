@@ -167,6 +167,7 @@ public class Diagnostico {
 			st = conn.createStatement();
 			String str = "SELECT (symptom.name, symptom.cui) "
 					+ "FROM Symptom";
+			ResultSet rs = st.executeQuery(str);
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
