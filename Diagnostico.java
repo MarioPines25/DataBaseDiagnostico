@@ -1,4 +1,4 @@
-package DataBase;
+
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -279,10 +279,11 @@ public class Diagnostico {
 	private void realizarDiagnostico() throws Exception{
 		int n = 0;
 		//listarSintomasCui();
-		//readString();
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
-		for(int i = 0; i < sintomas.size(); i++) {
+		//String entrada = readString();
+		
+		for(int i = 0; i < 6; i++) {
 			String entrada = readString();
 			sintomas.add(entrada);
 			System.out.print("Ingresar otro sintoma?[s/n]");
@@ -292,24 +293,44 @@ public class Diagnostico {
 				i--;
 			}
 			if(respuesta.equals("n")) {
+				n++;
 				break;
 			}
 			else {
 				n++;
-			}	
+		}	
+			
 		}
-
-
+		System.out.println("Gracias, aquí tiene su diagnóstico");
 		String list = "";
-		if (n>2) {
-			for (int i = 0; i < n-2; i++ ) {
-				list += sintomas.get(i) + ", ";
-			}
+		
+		if(n == 1){
+			list += "symptom.cui = "+ sintomas.get(0);
+			System.out.println(list);
 		}
-		list += sintomas.get(n-1);
+		if (n == 2){
+			list += "symptom.cui = " + sintomas.get(0) + " AND ";
+			list += "symptom.cui = " + sintomas.get(1);
+			System.out.println(list);
+			
+		}
+		if (n>2) {
+			for (int i = 0; i < n-1; i++ ) {
+				list += "symptom.cui = " + sintomas.get(i) + " AND ";
+			}
+			list += "symptom.cui = " + sintomas.get(n-1);
+			System.out.println(list);
+		}
+		
 		String sintoma = "SELECT symptom.nombre"
 				+ "FROM Symptom"
-				+ "WHERE sintomas = " + list + ";";
+				+ "WHERE symptom.cui = " + list + ";";
+		
+		Statement st =  conn.createStatement();
+		ResultSet rs = st.executeQuery(sintoma);
+		 while(rs.next()){
+			 System.out.println(rs.getObject(2));
+		 }
 
 	}
 
