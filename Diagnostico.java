@@ -1,9 +1,11 @@
-import java.io.InputStreamReader;
+package DataBase;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.sql.*;
 
 
@@ -82,7 +84,7 @@ public class Diagnostico {
 		PreparedStatement p = null;
 		try {
 			conectar();
-			
+
 			s = "DROP SCHEMA  `diagnostico`;";
 			p = conn.prepareStatement(s);
 			p.executeUpdate();
@@ -313,46 +315,104 @@ public class Diagnostico {
 
 	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
 		try {
-			st = conn.createStatement();
-			String str = "SELECT (symptom.name, symptom.cui) "
+			String s;
+			PreparedStatement p = null;
+			String s1 = "SELECT (symptom.name, symptom.cui) "
 					+ "FROM Symptom";
-			ResultSet rs = st.executeQuery(str);
+
+			p = conn.prepareStatement(s1);
+			p.executeUpdate();
+			p.close();	
+
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
 
-	private void listarSintomasEnfermedad() {
+	private void listarSintomasEnfermedad() throws Exception {
 		try {
-			st = conn.createStatement();
-			String str = "SELECT (disease.name) "
+			conectar();
+
+			String nombre = "SELECT (disease.name) "
 					+ "FROM Disease;";
-			Scanner scanner = new Scanner (System.in);
-			System.out.println("Ingrese Id de la enfermedad: ");
-			String entrada = scanner.nextLine();
-			String query = "SELECT (disease.id)"
-					+ "FROM Disease"
-					+ "WHERE disease_id =" + entrada +";";
+			Statement st1 =  conn.createStatement();
+			ResultSet rs1 = st1.executeQuery(nombre);
+
+			String id = "SELECT (disease.disease_id) "
+					+ "FROM Disease;";
+			Statement st2 = conn.createStatement();
+			ResultSet rs2 = st2.executeQuery(id);
+
+			while(rs1.next() && rs2.next()) {
+				System.out.println(rs1.getObject(1) + "/" + rs2.getObject(1));
+			}
+
+			System.out.println("Ingrese el ID de la enfermedad");
+			int entrada = readInt();
+
+			String cui = "SELECT cui " + "FROM disease_symptom "
+					+ "WHERE disease_id= " + entrada + ";";
+			PreparedStatement st3 = conn.prepareStatement(cui);
+			ResultSet rs3 = st3.executeQuery(cui);
+
+			while(rs3.next()) {
+				String comp = rs3.getString(1);
+				String cuicomp = "SELECT name " + "FROM Symptom " 
+						+ "WHERE cui= " + comp + ";";
+				Statement st4 = conn.createStatement();
+				ResultSet rs4 = st4.executeQuery(cuicomp);
+				if(rs4.next()) {
+					System.out.println(rs4.getObject(1));
+				}	
+			}
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
 
 
-	private void listarEnfermedadesYCodigosAsociados() {
+	private void listarEnfermedadesYCodigosAsociados() throws Exception {
 		try {
-			st = conn.createStatement();
-			String str = "SELECT (disease.name, code.code) "
+			conectar();
+
+			String id = "SELECT (disease.disease_id) "
 					+ "FROM Disease;";
+			Statement st =  conn.createStatement();
+			ResultSet rs = st.executeQuery(id);
+
+			while(rs.next()) {
+
+				String id1 = rs.getString(1);
+				String codeasociado   = "SELECT code " + "FROM Disease_has_code"
+						+ "WHERE id= " + id1 + ";";
+				Statement st1 = conn.createStatement();
+				ResultSet rs1 = st1.executeQuery(codeasociado); //codes asociados al id
+				
+				String nombre   = "SELECT name " + "FROM Disease"
+						+ "WHERE id= " + id1 + ";";
+				Statement st2 = conn.createStatement();
+				ResultSet rs2 = st2.executeQuery(nombre);
+				
+				while(rs1.next()) {
+					String code1 = rs1.getString(1);
+					String sourceasociado   = "SELECT source_id " + "FROM Code"
+							+ "WHERE code= " + code1 + ";";
+					Statement st3 = conn.createStatement();
+					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un code
+					
+					String sourceid = rs3.getString(1);
+					String nombresource = "SELECT name " + "FROM Source"
+										+ "WHERE source_id=" + sourceid + ";";
+					Statement st4 = conn.createStatement();
+					ResultSet rs4 = st4.executeQuery(nombresource);
+					
+					System.out.println(rs2.getObject(1) + "/" + rs1.getObject(1) + "," + rs4.getObject(1));
+				}
+			}
 		} catch (SQLException ex) {
 			System.err.println(ex);
 		}
-		/*Scanner scanner = new Scanner (System.in);
-		System.out.println("Ingrese Id de la enfermedad: ");
-		String entrada = scanner.nextLine();
-		String query = "SELECT (disease.name)"
-				+ "FROM Disease"
-				+ "WHERE disease_id =" + entrada;*/
+
 	}
 
 	private void listarSintomasYTiposSemanticos() { //revisar
