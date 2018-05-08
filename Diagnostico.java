@@ -79,15 +79,16 @@ public class Diagnostico {
 
 	private void crearBD() throws Exception{
 		String s;
-		PreparedStatement p;
+		PreparedStatement p = null;
 		try {
 			conectar();
-			s = "DROP SCHEMA IF EXIST `diagnostico`;";
+			
+			s = "DROP SCHEMA  `diagnostico`;";
 			p = conn.prepareStatement(s);
 			p.executeUpdate();
 			p.close();
-			
-			s = "CREATE SCHEMA IF NOT EXIST `diagnostico`;";
+
+			s = "CREATE SCHEMA `diagnostico`;";
 			p = conn.prepareStatement(s);
 			p.executeUpdate();
 			p.close();
@@ -102,41 +103,49 @@ public class Diagnostico {
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p.close();	
-			
+
 			// Tabla symptom:
 			String symptom ="CREATE TABLE `diagnostico`.`symptom` ("+
 					"`cui` VARCHAR(25) NOT NULL," +
 					"`name` VARCHAR(255) NOT NULL,"+
 					"PRIMARY KEY (`cui`));";
 
-			st.executeUpdate(symptom);
+			p = conn.prepareStatement(symptom);
+			p.executeUpdate();
+			p.close();	
 
 			// Tabla source
 			String source = "CREATE TABLE `diagnostico`.`source` ( "+
 					"`source_id` INT NOT NULL," +
 					"`name` VARCHAR(255) NOT NULL," + 
 					"PRIMARY KEY (`source_id`));";
-			st.executeUpdate(source);
-			
+			p = conn.prepareStatement(source);
+			p.executeUpdate();
+			p.close();	
+
 			// Tabla code
-						String code="CREATE TABLE `diagnostico`.`code` ("+
-								"`code` VARCHAR(255) NOT NULL,"+
-								"`source_id_c` INT NOT NULL," +
-								"PRIMARY KEY (`code`),"+
-								"INDEX `source_id_c_idx` (`source_id_c` ASC)," +
-								"CONSTRAINT `source_id_c`" +
-								"FOREIGN KEY (`source_id_c`)" +
-								"REFERENCES `diagnostico`.`source` (`source_id`)" +
-								"ON DELETE NO ACTION"+
-								"ON UPDATE NO ACTION);";
-						st.executeUpdate(code);
-			
+			String code="CREATE TABLE `diagnostico`.`code` ("+
+					"`code` VARCHAR(255) NOT NULL,"+
+					"`source_id_c` INT NOT NULL," +
+					"PRIMARY KEY (`code`),"+
+					"INDEX `source_id_c_idx` (`source_id_c` ASC)," +
+					"CONSTRAINT `source_id_c`" +
+					" FOREIGN KEY (`source_id_c`)" +
+					" REFERENCES `diagnostico`.`source` (`source_id`)" +
+					" ON DELETE NO ACTION"+
+					" ON UPDATE NO ACTION);";
+			p = conn.prepareStatement(code);
+			p.executeUpdate();
+			p.close();	
+
 			// Tabla semantic_type
 			String semantic_type = "CREATE TABLE `diagnostico`.`semantic_type` (" +
 					"`semantic_type_id` INT NOT NULL," +
 					"`cui` VARCHAR(45) NOT NULL," +
 					"PRIMARY KEY (`semantic_type_id`));";
-			st.executeUpdate(semantic_type);
+			p = conn.prepareStatement(semantic_type);
+			p.executeUpdate();
+			p.close();	
 
 			// Tabla symptom_semantic_type
 			String symptom_semantic_type = "CREATE TABLE `diagnostico`.`symptom_semantic_type` (" +
@@ -144,37 +153,41 @@ public class Diagnostico {
 					"`semantic_type_id_sst` INT NOT NULL," +
 					"INDEX (`cui_sst` ASC)," +
 					"INDEX `semantic_type_id_sst_idx` (`semantic_type_id_sst` ASC)," +
-					"CONSTRAINT `cui_sst`"+
-					"FOREIGN KEY (`cui_sst`)"+
-					"REFERENCES `diagnostico`.`symptom` (`cui`)"+
-					"ON DELETE NO ACTION"+
-					"ON UPDATE NO ACTION,"+
-					"CONSTRAINT `semantic_type_id_sst`"+
-					"FOREIGN KEY (`semantic_type_id_sst`)"+
-					"REFERENCES `diagnostico`.`semantic_type` (`semantic_type_id`)"+
-					"ON DELETE NO ACTION"+
+					" CONSTRAINT `cui_sst`"+
+					" FOREIGN KEY (`cui_sst`)"+
+					" REFERENCES `diagnostico`.`symptom` (`cui`)"+
+					" ON DELETE NO ACTION"+
+					" ON UPDATE NO ACTION,"+
+					" CONSTRAINT `semantic_type_id_sst`"+
+					" FOREIGN KEY (`semantic_type_id_sst`)"+
+					" REFERENCES `diagnostico`.`semantic_type` (`semantic_type_id`)"+
+					" ON DELETE NO ACTION"+
 					" ON UPDATE NO ACTION);";
-			st.executeUpdate(symptom_semantic_type);
-			
+			p = conn.prepareStatement(symptom_semantic_type);
+			p.executeUpdate();
+			p.close();	
+
 			// Tabla disease_symptom
 			String disease_symptom = "CREATE TABLE `diagnostico`.`disease_symptom` (" +
 					"`disease_id_ds` INT NOT NULL," +
 					"`cui_ds` VARCHAR(45) NOT NULL," +
 					"INDEX `disease_id_ds_idx` (`disease_id_ds` ASC)," +
 					"INDEX `cui_ds_idx` (`cui_ds` ASC)," +
-					"CONSTRAINT `disease_id_ds`" +
-					"FOREIGN KEY (`disease_id_ds`)" +
-					"REFERENCES `diagnostico`.`disease` (`disease_id`)"+
-					"ON DELETE NO ACTION"+
-					"ON UPDATE NO ACTION,"+
-					"CONSTRAINT `cui_ds`" +
+					" CONSTRAINT `disease_id_ds`" +
+					" FOREIGN KEY (`disease_id_ds`)" +
+					" REFERENCES `diagnostico`.`disease` (`disease_id`)"+
+					" ON DELETE NO ACTION"+
+					" ON UPDATE NO ACTION,"+
+					" CONSTRAINT `cui_ds`" +
 					" FOREIGN KEY (`cui_ds`)" +
-					"REFERENCES `diagnostico`.`symptom` (`cui`)" +
-					"ON DELETE NO ACTION" +
+					" REFERENCES `diagnostico`.`symptom` (`cui`)" +
+					" ON DELETE NO ACTION" +
 					" ON UPDATE NO ACTION);";
-			st.executeUpdate(disease_symptom);
+			p = conn.prepareStatement(disease_symptom);
+			p.executeUpdate();
+			p.close();	
 
-			
+
 
 			//Tabla disease_has_code
 			String disease_has_code = "CREATE TABLE `diagnostico`.`disease_has_code` (" +
@@ -184,23 +197,25 @@ public class Diagnostico {
 					"INDEX `disease_id_dhc_idx` (`disease_id_dhc` ASC),"+
 					"INDEX `code_dhc_idx` (`code_dhc` ASC)," +
 					"INDEX `source_id_dhc_idx` (`source_id_dhc` ASC),"+
-					"CONSTRAINT `disease_id_dhc`" +
-					"FOREIGN KEY (`disease_id_dhc`)"+
-					"REFERENCES `diagnostico`.`disease` (`disease_id`)" +
-					"ON DELETE NO ACTION"+
-					"ON UPDATE NO ACTION," +
-					"CONSTRAINT `code_dhc`" +
-					"FOREIGN KEY (`code_dhc`)"+
-					"REFERENCES `diagnostico`.`code` (`code`)"+
-					"ON DELETE NO ACTION" +
-					"ON UPDATE NO ACTION,"+
-					"CONSTRAINT `source_id_dhc`"+
-					"FOREIGN KEY (`source_id_dhc`)" +
-					"REFERENCES `diagnostico`.`source` (`source_id`)"+
-					"ON DELETE NO ACTION"+
-					"ON UPDATE NO ACTION);";
-			st.executeUpdate(disease_has_code);
-			
+					" CONSTRAINT `disease_id_dhc`" +
+					" FOREIGN KEY (`disease_id_dhc`)"+
+					" REFERENCES `diagnostico`.`disease` (`disease_id`)" +
+					" ON DELETE NO ACTION"+
+					" ON UPDATE NO ACTION," +
+					" CONSTRAINT `code_dhc`" +
+					" FOREIGN KEY (`code_dhc`)"+
+					" REFERENCES `diagnostico`.`code` (`code`)"+
+					" ON DELETE NO ACTION" +
+					" ON UPDATE NO ACTION,"+
+					" CONSTRAINT `source_id_dhc`"+
+					" FOREIGN KEY (`source_id_dhc`)" +
+					" REFERENCES `diagnostico`.`source` (`source_id`)"+
+					" ON DELETE NO ACTION"+
+					" ON UPDATE NO ACTION);";
+			p = conn.prepareStatement(disease_has_code);
+			p.executeUpdate();
+			p.close();	
+
 
 
 			//Obtencion de los datos a traves del archivo DATA
@@ -252,194 +267,194 @@ public class Diagnostico {
 			//
 			//
 			//			
-					}catch(SQLException ex) {
-						System.err.println(ex.getMessage());
-				}
+		}catch(SQLException ex) {
+			System.err.println(ex.getMessage());
+		}
 
+	}
+
+
+	private void realizarDiagnostico() throws Exception{
+		int n = 0;
+		//listarSintomasCui();
+		//readString();
+		ArrayList<String> sintomas = new ArrayList<>();
+		System.out.println("Ingrese cod_sintoma: ");
+		for(int i = 0; i < sintomas.size(); i++) {
+			String entrada = readString();
+			sintomas.add(entrada);
+			System.out.print("Ingresar otro sintoma?[s/n]");
+			String respuesta = readString();
+			if(!respuesta.equals("n") || !respuesta.equals("s")) {
+				System.out.println("Introduce un sintoma");
+				i--;
+			}
+			if(respuesta.equals("n")) {
+				break;
+			}
+			else {
+				n++;
+			}	
 		}
 
 
-		private void realizarDiagnostico() throws Exception{
-			int n = 0;
-			//listarSintomasCui();
-			//readString();
-			ArrayList<String> sintomas = new ArrayList<>();
-			System.out.println("Ingrese cod_sintoma: ");
-			for(int i = 0; i < sintomas.size(); i++) {
-				String entrada = readString();
-				sintomas.add(entrada);
-				System.out.print("Ingresar otro sintoma?[s/n]");
-				String respuesta = readString();
-				if(!respuesta.equals("n") || !respuesta.equals("s")) {
-					System.out.println("Introduce un sintoma");
-					i--;
-				}
-				if(respuesta.equals("n")) {
-					break;
-				}
-				else {
-					n++;
-				}	
-			}
-
-
-			String list = "";
-			if (n>2) {
-				for (int i = 0; i < n-2; i++ ) {
-					list += sintomas.get(i) + ", ";
-				}
-			}
-			list += sintomas.get(n-1);
-			String sintoma = "SELECT symptom.nombre"
-					+ "FROM Symptom"
-					+ "WHERE sintomas = " + list + ";";
-
-		}
-
-		private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
-			try {
-				st = conn.createStatement();
-				String str = "SELECT (symptom.name, symptom.cui) "
-						+ "FROM Symptom";
-				ResultSet rs = st.executeQuery(str);
-			} catch (SQLException ex) {
-				System.err.println(ex.getMessage());
+		String list = "";
+		if (n>2) {
+			for (int i = 0; i < n-2; i++ ) {
+				list += sintomas.get(i) + ", ";
 			}
 		}
+		list += sintomas.get(n-1);
+		String sintoma = "SELECT symptom.nombre"
+				+ "FROM Symptom"
+				+ "WHERE sintomas = " + list + ";";
 
-		private void listarSintomasEnfermedad() {
-			try {
-				st = conn.createStatement();
-				String str = "SELECT (disease.name) "
-						+ "FROM Disease;";
-				Scanner scanner = new Scanner (System.in);
-				System.out.println("Ingrese Id de la enfermedad: ");
-				String entrada = scanner.nextLine();
-				String query = "SELECT (disease.id)"
-						+ "FROM Disease"
-						+ "WHERE disease_id =" + entrada +";";
-			} catch (SQLException ex) {
-				System.err.println(ex.getMessage());
-			}
+	}
+
+	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (symptom.name, symptom.cui) "
+					+ "FROM Symptom";
+			ResultSet rs = st.executeQuery(str);
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
 		}
+	}
+
+	private void listarSintomasEnfermedad() {
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (disease.name) "
+					+ "FROM Disease;";
+			Scanner scanner = new Scanner (System.in);
+			System.out.println("Ingrese Id de la enfermedad: ");
+			String entrada = scanner.nextLine();
+			String query = "SELECT (disease.id)"
+					+ "FROM Disease"
+					+ "WHERE disease_id =" + entrada +";";
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
+		}
+	}
 
 
-		private void listarEnfermedadesYCodigosAsociados() {
-			try {
-				st = conn.createStatement();
-				String str = "SELECT (disease.name, code.code) "
-						+ "FROM Disease;";
-			} catch (SQLException ex) {
-				System.err.println(ex);
-			}
-			/*Scanner scanner = new Scanner (System.in);
+	private void listarEnfermedadesYCodigosAsociados() {
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (disease.name, code.code) "
+					+ "FROM Disease;";
+		} catch (SQLException ex) {
+			System.err.println(ex);
+		}
+		/*Scanner scanner = new Scanner (System.in);
 		System.out.println("Ingrese Id de la enfermedad: ");
 		String entrada = scanner.nextLine();
 		String query = "SELECT (disease.name)"
 				+ "FROM Disease"
 				+ "WHERE disease_id =" + entrada;*/
-		}
+	}
 
-		private void listarSintomasYTiposSemanticos() { //revisar
-			try {
-				st = conn.createStatement();
-				String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
-						+ "FROM Symptom";
-				ResultSet rs = st.executeQuery(str);
+	private void listarSintomasYTiposSemanticos() { //revisar
+		try {
+			st = conn.createStatement();
+			String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
+					+ "FROM Symptom";
+			ResultSet rs = st.executeQuery(str);
 
-			} catch (SQLException ex) {
-				System.err.println(ex.getMessage());
-			}
-		}
-
-		private void mostrarEstadisticasBD() {
-			try {
-				st = conn.createStatement();
-
-				String numEnfermedades= "SELECT COUNT(disease.disease_id)"
-						+ "FROM Disease;";
-				ResultSet rs = st.executeQuery(numEnfermedades);
-
-				String numSintomas= "SELECT COUNT (symptom.cui)"
-						+ "FROM Symptom;";
-				rs = st.executeQuery(numSintomas);
-
-				String maxSympEnf= "SELECT COUNT (disease.disease_id) "
-						+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
-				rs = st.executeQuery(maxSympEnf);
-
-				String minSympEnf= "SELECT COUNT (disease.disease_id) "
-						+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
-				rs = st.executeQuery(minSympEnf);
-
-				String avgSymp= "SELECT COUNT (disease.disease_id)"
-						+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
-				rs = st.executeQuery(avgSymp);
-
-				String semTypes= "SELECT (semantic.semantic_type_id)"
-						+ "FROM Semantic";
-				rs = st.executeQuery(semTypes);
-
-				String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
-						+ "FROM Semantic;";
-				rs = st.executeQuery(numSemTypes);
-			}
-
-			catch(SQLException ex){
-				System.err.println(ex.getMessage());
-			}
-		}
-
-		/**
-		 * M�todo para leer n�meros enteros de teclado.
-		 * 
-		 * @return Devuelve el n�mero le�do.
-		 * @throws Exception
-		 *             Puede lanzar excepci�n.
-		 */
-		private int readInt() throws Exception {
-			try {
-				System.out.print("> ");
-				return Integer.parseInt(new BufferedReader(new InputStreamReader(System.in)).readLine());
-			} catch (Exception e) {
-				throw new Exception("Not number");
-			}
-		}
-
-		/**
-		 * M�todo para leer cadenas de teclado.
-		 * 
-		 * @return Devuelve la cadena le�da.
-		 * @throws Exception
-		 *             Puede lanzar excepci�n.
-		 */
-		private String readString() throws Exception {
-			try {
-				System.out.print("> ");
-				return new BufferedReader(new InputStreamReader(System.in)).readLine();
-			} catch (Exception e) {
-				throw new Exception("Error reading line");
-			}
-		}
-
-		/**
-		 * M�todo para leer el fichero que contiene los datos.
-		 * 
-		 * @return Devuelve una lista de String con el contenido.
-		 * @throws Exception
-		 *             Puede lanzar excepci�n.
-		 */
-		private LinkedList<String> readData() throws Exception {
-			LinkedList<String> data = new LinkedList<String>();
-			BufferedReader bL = new BufferedReader(new FileReader(DATAFILE));
-			while (bL.ready()) {
-				data.add(bL.readLine());
-			}
-			bL.close();
-			return data;
-		}
-
-		public static void main(String args[]) {
-			new Diagnostico().showMenu();
+		} catch (SQLException ex) {
+			System.err.println(ex.getMessage());
 		}
 	}
+
+	private void mostrarEstadisticasBD() {
+		try {
+			st = conn.createStatement();
+
+			String numEnfermedades= "SELECT COUNT(disease.disease_id)"
+					+ "FROM Disease;";
+			ResultSet rs = st.executeQuery(numEnfermedades);
+
+			String numSintomas= "SELECT COUNT (symptom.cui)"
+					+ "FROM Symptom;";
+			rs = st.executeQuery(numSintomas);
+
+			String maxSympEnf= "SELECT COUNT (disease.disease_id) "
+					+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
+			rs = st.executeQuery(maxSympEnf);
+
+			String minSympEnf= "SELECT COUNT (disease.disease_id) "
+					+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
+			rs = st.executeQuery(minSympEnf);
+
+			String avgSymp= "SELECT COUNT (disease.disease_id)"
+					+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
+			rs = st.executeQuery(avgSymp);
+
+			String semTypes= "SELECT (semantic.semantic_type_id)"
+					+ "FROM Semantic";
+			rs = st.executeQuery(semTypes);
+
+			String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
+					+ "FROM Semantic;";
+			rs = st.executeQuery(numSemTypes);
+		}
+
+		catch(SQLException ex){
+			System.err.println(ex.getMessage());
+		}
+	}
+
+	/**
+	 * M�todo para leer n�meros enteros de teclado.
+	 * 
+	 * @return Devuelve el n�mero le�do.
+	 * @throws Exception
+	 *             Puede lanzar excepci�n.
+	 */
+	private int readInt() throws Exception {
+		try {
+			System.out.print("> ");
+			return Integer.parseInt(new BufferedReader(new InputStreamReader(System.in)).readLine());
+		} catch (Exception e) {
+			throw new Exception("Not number");
+		}
+	}
+
+	/**
+	 * M�todo para leer cadenas de teclado.
+	 * 
+	 * @return Devuelve la cadena le�da.
+	 * @throws Exception
+	 *             Puede lanzar excepci�n.
+	 */
+	private String readString() throws Exception {
+		try {
+			System.out.print("> ");
+			return new BufferedReader(new InputStreamReader(System.in)).readLine();
+		} catch (Exception e) {
+			throw new Exception("Error reading line");
+		}
+	}
+
+	/**
+	 * M�todo para leer el fichero que contiene los datos.
+	 * 
+	 * @return Devuelve una lista de String con el contenido.
+	 * @throws Exception
+	 *             Puede lanzar excepci�n.
+	 */
+	private LinkedList<String> readData() throws Exception {
+		LinkedList<String> data = new LinkedList<String>();
+		BufferedReader bL = new BufferedReader(new FileReader(DATAFILE));
+		while (bL.ready()) {
+			data.add(bL.readLine());
+		}
+		bL.close();
+		return data;
+	}
+
+	public static void main(String args[]) {
+		new Diagnostico().showMenu();
+	}
+}
