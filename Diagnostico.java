@@ -1,5 +1,3 @@
-package DataBase;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.io.BufferedReader;
@@ -63,26 +61,26 @@ public class Diagnostico {
 	
 	private static class dEnfermedad{
 		public final String nombreEnfermedad;
-		public final Set<dCodigoYnombre> fuentes;
-		public final Set<dSintoma> sintomas;
-		private dEnfermedad (String nombreEnfermedad, Set<dCodigoYnombre> fuentes, Set<dSintoma>sintomas){
+		public final LinkedList<dCodigoYnombre> fuentes;
+		public final LinkedList<dSintoma> sintomas;
+		private dEnfermedad (String nombreEnfermedad, LinkedList<dCodigoYnombre> fuentes, LinkedList<dSintoma> sintomas){
 			this.nombreEnfermedad=nombreEnfermedad;
 			this.fuentes=fuentes;
 			this.sintomas=sintomas;
 		}
 		
-		public static dEnfermedad decodificar(String entrada){
-			String[]sep = entrada.split("="); //Separacion de enfermedades
-			String primero = sep[0];
-			String sints=sep[1];
-			
-			sep = primero.split(":");
-			String nombreEnf=sep[0];
-			String codigos=sep[1];
-			return new dEnfermedad(nombreEnf, Arrays.stream(codigos.split(";")).map(dCodigoYnombre::decodificar).collect(Collectors.toSet()),
-					Arrays.stream(sints.split(";")).map(dSintoma::decodificar).collect(Collectors.toSet()));
-			
-		}
+//		public static dEnfermedad decodificar(String entrada){
+//			String[]sep = entrada.split("="); //Separacion de enfermedades
+//			String primero = sep[0];
+//			String sints=sep[1];
+//			
+//			sep = primero.split(":");
+//			String nombreEnf=sep[0];
+//			String codigos=sep[1];
+//			return new dEnfermedad(nombreEnf, Arrays.stream(codigos.split(";")).map(dCodigoYnombre::decodificar).collect(Collectors.toSet()),
+//					Arrays.stream(sints.split(";")).map(dSintoma::decodificar).collect(Collectors.toSet()));
+//			
+//		}
 		
 	}
 	private void showMenu() {
@@ -154,11 +152,11 @@ public class Diagnostico {
 		String s;
 		PreparedStatement p = null;
 		try {
-			if(connection==null) {
+			if(conn==null) {
 				conectar();
 			}
 			
-			PreparedStatement pst = connection.prepareStatement("CREATE SCHEMA IF NOT EXISTS `diagnostico`  DEFAULT CHARACTER SET utf8;");
+			PreparedStatement pst = conn.prepareStatement("CREATE SCHEMA IF NOT EXISTS `diagnostico`  DEFAULT CHARACTER SET utf8;");
 			pst.executeUpdate();
 
 			//CREACION DE TABLAS
@@ -168,7 +166,7 @@ public class Diagnostico {
 					+ "`disease_id` AUTO_INCREMENT," 
 					+ "`name` VARCHAR(255) UNIQUE," 
 					+ "PRIMARY KEY (`disease_id`));";
-			p = connection.prepareStatement(disease);
+			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p.close();	
 
@@ -178,7 +176,7 @@ public class Diagnostico {
 					"`name` VARCHAR(255) UNIQUE,"+
 					"PRIMARY KEY (`cui`));";
 
-			p = connection.prepareStatement(symptom);
+			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
 			p.close();	
 
@@ -187,7 +185,7 @@ public class Diagnostico {
 					"`source_id` INT AUTO_INCREMENT," +
 					"`name` VARCHAR(255) UNIQUE," + 
 					"PRIMARY KEY (`source_id`));";
-			p = connection.prepareStatement(source);
+			p = conn.prepareStatement(source);
 			p.executeUpdate();
 			p.close();	
 
@@ -196,7 +194,7 @@ public class Diagnostico {
 					"code VARCHAR(255), source_id INT, " +
 					"PRIMARY KEY (code, source_id), " +
 					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = connection.prepareStatement(code);
+			p = conn.prepareStatement(code);
 			p.executeUpdate();
 			p.close();	
 
@@ -205,7 +203,7 @@ public class Diagnostico {
 					"`semantic_type_id` INT AUTO_INCREMENT," +
 					"`cui` VARCHAR(45) UNIQUE," +
 					"PRIMARY KEY (`semantic_type_id`));";
-			p = connection.prepareStatement(semantic_type);
+			p = conn.prepareStatement(semantic_type);
 			p.executeUpdate();
 			p.close();	
 
@@ -215,7 +213,7 @@ public class Diagnostico {
 					"PRIMARY KEY (cui, semantic_type_id), " +
 					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = connection.prepareStatement(symptom_semantic_type);
+			p = conn.prepareStatement(symptom_semantic_type);
 			p.executeUpdate();
 			p.close();	
 
@@ -225,7 +223,7 @@ public class Diagnostico {
 					"PRIMARY KEY (disease_id, cui)," +
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
 					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = connection.prepareStatement(disease_symptom);
+			p = conn.prepareStatement(disease_symptom);
 			p.executeUpdate();
 			p.close();	
 
@@ -238,7 +236,7 @@ public class Diagnostico {
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = connection.prepareStatement(disease_has_code);
+			p = conn.prepareStatement(disease_has_code);
 			p.executeUpdate();
 			p.close();	
 
@@ -290,7 +288,7 @@ public class Diagnostico {
 			
 			//tabla code
 			String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
-			PreparedStatement pst= conn.prepareStatement(query);
+			PreparedStatement psts= conn.prepareStatement(query);
 			for(int i=0; i<codigos.size();i++){
 				pst.setString(1, codigos.get(i).codigo);
 				pst.setInt(2, codigos.get(i).hashCode());
@@ -352,7 +350,7 @@ public class Diagnostico {
 			 * de las tablas los datos necesarios de cada array.
 			 */
 
-						}
+//						}
 			
 			
 						
@@ -447,6 +445,7 @@ public class Diagnostico {
 			
 			while(rs.next() && rs1.next()) {
 				System.out.println("Sintoma: " + rs.getObject(1) + " , Codigo: " + rs1.getObject(1));	
+			}
 
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
