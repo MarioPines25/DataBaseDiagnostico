@@ -242,12 +242,12 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-			//Tomamos las enfermedades del archivo de entrada
+			/*Tomamos las enfermedades del archivo de entrada
 			Set<dEnfermedad> enfermedades= readData().stream()
 					.map(dEnfermedad::decodificar)
 					.collect(Collectors.toSet());
-			/* A continuacion, necesitamos crear dos mapas para las 
-			 ids y tipos semanticos conocidos */
+			 //A continuacion, necesitamos crear dos mapas para las 
+			 //ids y tipos semanticos conocidos 
 			Map<String, Integer> idsConocidas=new HashMap<>();
 			Map<String, Integer> stConocidos=new HashMap<>();
 			//realizamos lo mismo para los sintomas conocidos
@@ -258,6 +258,52 @@ public class Diagnostico {
 				String query = "INSERT INTO disease (name) VALUES (?)";
 				
 				
+			}*/
+			
+			//Obtencion de los datos segun DATA
+			
+			LinkedList<String>list = readData();
+			LinkedList<dEnfermedad>todasLasEnfermedades = new LinkedList<dEnfermedad>();
+			LinkedList<dCodigoYnombre>codigos= new LinkedList<dCodigoYnombre>();
+			LinkedList<dSintoma> sintomas= new LinkedList<dSintoma>();
+			for(int i=0; i<list.size();i++){
+				
+				String [] primeraSep = list.get(i).split("=");
+				String [] segundaSep=primeraSep[0].split(":");
+				String [] codVoc= segundaSep[1].split(";");
+				for(int j=0;j<codVoc.length;i++){
+					String[]datosCyV=codVoc[j].split("@");
+					dCodigoYnombre cod = new dCodigoYnombre(datosCyV[0], datosCyV[1]);
+					codigos.add(cod);
+				}
+				String [] parteDerecha=primeraSep[1].split(";");
+				for(int j=0;j<parteDerecha.length;j++){
+					String []datosSint=parteDerecha[j].split(":");
+					dSintoma sint= new dSintoma (datosSint[0],datosSint[1],datosSint[2]);
+					sintomas.add(sint);
+				}
+				dEnfermedad e=new dEnfermedad (segundaSep[0],codigos,sintomas);
+				todasLasEnfermedades.add(e);
+			}
+			
+			//Introduccion de los datos en tablas
+			
+			//tabla code
+			String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
+			PreparedStatement pst= conn.prepareStatement(query);
+			for(int i=0; i<codigos.size();i++){
+				pst.setString(1, codigos.get(i).codigo);
+				pst.setInt(2, codigos.get(i).hashCode());
+				pst.executeUpdate();
+			}
+			pst.close();
+			
+			//tabla disease
+			String query2 = "INSERT INTO disease (name) VALUES (?);";
+			PreparedStatement pst2= conn.prepareStatement(query2);
+			for(int i=0; i<todasLasEnfermedades.size();i++){
+				pst2.setString(1, todasLasEnfermedades.get(i).nombreEnfermedad);
+				pst2.executeUpdate();
 			}
 
 			//Obtencion de los datos a traves del archivo DATA
