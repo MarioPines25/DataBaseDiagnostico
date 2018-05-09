@@ -579,7 +579,25 @@ public class Diagnostico {
 				System.out.println("Tipo Semantico: " + rs10.getObject(1) + ", Sintomas asociados: " + rs11.getObject(1));
 				System.out.println("El numero total de Tipos Semanticos es: " + rs12.getObject(1));
 			}
-			
+			int contador =0;
+			int suma=0;
+			int average=0;
+			String avgsymp= "SELECT (disease.disease_id) "
+					+ "FROM DiseaseSympton;";
+			Statement st13 = conn.createStatement();
+			ResultSet rs13 = st13.executeQuery(avgsymp);//ids de enfermedades
+			while(rs13.next()) {
+				String id = rs13.getString(1);
+				String cuiavg = "SELECT COUNT (disease_symptom.cui) "
+						+	"FROM DiseaseSymptom WHERE disease_id= " + id + ";";
+				Statement st14 = conn.createStatement();
+				ResultSet rs14 = st14.executeQuery(cuiavg);//num de cuis asociados a un id
+				int sumador = rs14.getInt(1);
+				contador++;
+				suma=suma +sumador;
+			}
+			average=suma/contador;
+			System.out.println("El numero medio de sintomas: "+average);
 			
 			
 		}
