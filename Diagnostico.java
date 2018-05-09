@@ -335,14 +335,18 @@ public class Diagnostico {
 
 	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
 		try {
-			String s;
-			PreparedStatement p = null;
-			String s1 = "SELECT (symptom.name, symptom.cui) "
-					+ "FROM Symptom";
-
-			p = conn.prepareStatement(s1);
-			p.executeUpdate();
-			p.close();	
+			String sintomas = "SELECT (Symptom.name) "
+							+ "FROM Symptom;";
+			Statement st = conn.createStatement();
+			ResultSet rs = st.executeQuery(sintomas);
+			
+			String codSintomas = "SELECT (Symptom.cui) "
+					+ "FROM Symptom;";
+			Statement st1 = conn.createStatement();
+			ResultSet rs1 = st1.executeQuery(codSintomas);
+			
+			while(rs.next() && rs1.next()) {
+				System.out.println("Sintoma: " + rs.getObject(1) + " , Codigo: " + rs1.getObject(1));	
 
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
