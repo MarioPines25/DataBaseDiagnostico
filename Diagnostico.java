@@ -1,3 +1,10 @@
+/*
+Actualización del 10/05:
+	-Se ha añadido el algoritmo de insertar datos: hay que hacer test
+	-Hay que revisar sentencias SQL de creación de tablas "You have an error in your SQL syntax; 
+	check the manual that corresponds to your MySQL server version for the right syntax to use near".
+*/
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.io.BufferedReader;
