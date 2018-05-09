@@ -1,8 +1,7 @@
-
+package DataBase;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStreamReader;
@@ -282,7 +281,7 @@ public class Diagnostico {
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
 		//String entrada = readString();
-		
+
 		for(int i = 0; i < 6; i++) {
 			String entrada = readString();
 			sintomas.add(entrada);
@@ -298,12 +297,12 @@ public class Diagnostico {
 			}
 			else {
 				n++;
-		}	
-			
+			}	
+
 		}
 		System.out.println("Gracias, aquí tiene su diagnóstico");
 		String list = "";
-		
+
 		if(n == 1){
 			list += "symptom.cui = "+ sintomas.get(0);
 			System.out.println(list);
@@ -312,7 +311,7 @@ public class Diagnostico {
 			list += "symptom.cui = " + sintomas.get(0) + " AND ";
 			list += "symptom.cui = " + sintomas.get(1);
 			System.out.println(list);
-			
+
 		}
 		if (n>2) {
 			for (int i = 0; i < n-1; i++ ) {
@@ -321,16 +320,16 @@ public class Diagnostico {
 			list += "symptom.cui = " + sintomas.get(n-1);
 			System.out.println(list);
 		}
-		
+
 		String sintoma = "SELECT symptom.nombre"
 				+ "FROM Symptom"
 				+ "WHERE symptom.cui = " + list + ";";
-		
+
 		Statement st =  conn.createStatement();
 		ResultSet rs = st.executeQuery(sintoma);
-		 while(rs.next()){
-			 System.out.println(rs.getObject(2));
-		 }
+		while(rs.next()){
+			System.out.println(rs.getObject(2));
+		}
 
 	}
 
@@ -408,25 +407,25 @@ public class Diagnostico {
 						+ "WHERE id= " + id1 + ";";
 				Statement st1 = conn.createStatement();
 				ResultSet rs1 = st1.executeQuery(codeasociado); //codes asociados al id
-				
+
 				String nombre   = "SELECT name " + "FROM Disease"
 						+ "WHERE id= " + id1 + ";";
 				Statement st2 = conn.createStatement();
 				ResultSet rs2 = st2.executeQuery(nombre);
-				
+
 				while(rs1.next()) {
 					String code1 = rs1.getString(1);
 					String sourceasociado   = "SELECT source_id " + "FROM Code"
 							+ "WHERE code= " + code1 + ";";
 					Statement st3 = conn.createStatement();
 					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un code
-					
+
 					String sourceid = rs3.getString(1);
 					String nombresource = "SELECT name " + "FROM Source"
-										+ "WHERE source_id=" + sourceid + ";";
+							+ "WHERE source_id=" + sourceid + ";";
 					Statement st4 = conn.createStatement();
 					ResultSet rs4 = st4.executeQuery(nombresource);
-					
+
 					System.out.println(rs2.getObject(1) + "/" + rs1.getObject(1) + "," + rs4.getObject(1));
 				}
 			}
@@ -436,51 +435,154 @@ public class Diagnostico {
 
 	}
 
-	private void listarSintomasYTiposSemanticos() { //revisar
+	private void listarSintomasYTiposSemanticos() throws Exception { 
 		try {
-			st = conn.createStatement();
-			String str = "SELECT (symptom.cui, semantic_type.semantic_type_id) "
-					+ "FROM Symptom";
-			ResultSet rs = st.executeQuery(str);
+			conectar();
+
+			String cuisymp = "SELECT (symptom.cui) "
+					+ "FROM Symptom;";
+			Statement st1 =  conn.createStatement();
+			ResultSet rs1 = st1.executeQuery(cuisymp); //ids de los sintomas
+
+			while(rs1.next()) {
+
+				String nombre = "SELECT (symptom.name) "
+						+ "FROM Symptom "+
+						"WHERE cui= "+cuisymp+	";";
+				Statement st =  conn.createStatement();
+				ResultSet rs = st.executeQuery(nombre);//nombre sintomas asociado a id
+
+				String cui1 = rs1.getString(1);
+				String semanticasociado = "SELECT (symptom_semantic_type.semantic_type_id) "
+						+ "FROM SymptomSemanticType "
+						+ "WHERE cui= " +cui1+";";
+				Statement st2 =  conn.createStatement();
+				ResultSet rs2 = st2.executeQuery(semanticasociado); //semantics asociados a un cui
+
+				System.out.println("Sintoma: " + rs.getObject(1) + " , Tipo Semantico: " + rs2.getObject(1) );
+			}
+
 
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
 
-	private void mostrarEstadisticasBD() {
+	private void mostrarEstadisticasBD() throws Exception {
 		try {
-			st = conn.createStatement();
+			conectar();
 
-			String numEnfermedades= "SELECT COUNT(disease.disease_id)"
+			String numEnfermedades= "SELECT (disease.disease_id)"
 					+ "FROM Disease;";
-			ResultSet rs = st.executeQuery(numEnfermedades);
+			Statement st = conn.createStatement();
+			ResultSet rs = st.executeQuery(numEnfermedades);//ids de enfermedades
+			while(rs.next()) {
+				int contador = 0;
+				String numero = rs.getString(1);
+				contador ++;
+				System.out.println("El numero de enfermedades es: "+ contador);
+			}
 
-			String numSintomas= "SELECT COUNT (symptom.cui)"
+			String numSintomas= "SELECT (symptom.cui)"
 					+ "FROM Symptom;";
-			rs = st.executeQuery(numSintomas);
+			Statement st1 = conn.createStatement();
+			ResultSet rs1 = st1.executeQuery(numSintomas);//ids de sintomas
+			while(rs1.next()) {
+				int contador = 0;
+				String numero = rs1.getString(1);
+				contador++;
+				System.out.println("El numero de sintomas es: " + contador);
+			}
 
-			String maxSympEnf= "SELECT COUNT (disease.disease_id) "
-					+ "FROM DiseaseSympton WHERE MAX (symptom.cui);";
-			rs = st.executeQuery(maxSympEnf);
+			String maxSympEnf= "SELECT (disease.disease_id) "
+					+ "FROM DiseaseSympton;";
+			Statement st2 = conn.createStatement();
+			ResultSet rs2 = st2.executeQuery(maxSympEnf);//ids de enfermedades
+			while(rs2.next()) {
+				String id = rs2.getString(1);
+				String numcuiasociadoid = "SELECT COUNT (disease_symptom.cui) "
+						+	"FROM DiseaseSymptom WHERE disease_id= " + id + ";";
+				Statement st3 = conn.createStatement();
+				ResultSet rs3 = st3.executeQuery(numcuiasociadoid);//num de cuis asociados a un id
+				int comp = 0;
+				while(rs3.next()) {
+					int numcui = rs3.getInt(1);
+					if(comp < numcui) {
+						comp = numcui;
+					}
+				}
+				String max = "SELECT (disase_symptom.disease_id)"
+						+ "FROM DiseaseSymptom WHERE COUNT cui= "+ comp +";";
+				Statement st4 = conn.createStatement();
+				ResultSet rs4 = st4.executeQuery(max);
 
-			String minSympEnf= "SELECT COUNT (disease.disease_id) "
-					+ "FROM DiseaseSymptom WHERE MIN(symptom.cui);";
-			rs = st.executeQuery(minSympEnf);
+				int idfinal = rs4.getInt(1);
 
-			String avgSymp= "SELECT COUNT (disease.disease_id)"
-					+ "FROM DiseaseSymptom WHERE AVG(symptom.cui);";
-			rs = st.executeQuery(avgSymp);
+				String nombremaxENF = "SELECT (disase.name)"
+						+ "FROM Disease WHERE disease.id= "+ idfinal +";";
+				Statement st5 = conn.createStatement();
+				ResultSet rs5 = st5.executeQuery(nombremaxENF);
 
-			String semTypes= "SELECT (semantic.semantic_type_id)"
-					+ "FROM Semantic";
-			rs = st.executeQuery(semTypes);
+				System.out.println("La enfermedad con mas sintomas es: "+ rs5.getObject(1));
+			}
 
-			String numSemTypes= "SELECT COUNT (semantic.semantic_type_id)"
-					+ "FROM Semantic;";
-			rs = st.executeQuery(numSemTypes);
+			String minSympEnf= "SELECT (disease.disease_id) "
+					+ "FROM DiseaseSympton;";
+			Statement st6 = conn.createStatement();
+			ResultSet rs6 = st6.executeQuery(minSympEnf);//ids de enfermedades
+			while(rs6.next()) {
+				String id = rs6.getString(1);
+				String numcuiasociadoid = "SELECT COUNT (disease_symptom.cui) "
+						+	"FROM DiseaseSymptom WHERE disease_id= " + id + ";";
+				Statement st7 = conn.createStatement();
+				ResultSet rs7 = st7.executeQuery(numcuiasociadoid);//num de cuis asociados a un id
+
+				int comp = rs7.getInt(1);
+				while(rs7.next()) {
+					int numcui = rs7.getInt(1);
+					if(comp > numcui) {
+						comp = numcui;
+					}
+				}
+				String min = "SELECT (disase_symptom.disease_id)"
+						+ "FROM DiseaseSymptom WHERE COUNT cui= "+ comp +";";
+				Statement st8 = conn.createStatement();
+				ResultSet rs8 = st8.executeQuery(min);
+
+				int idfinal1 = rs8.getInt(1);
+
+				String nombreminENF = "SELECT (disase.name)"
+						+ "FROM Disease WHERE disease.id= "+ idfinal1 +";";
+				Statement st9 = conn.createStatement();
+				ResultSet rs9 = st9.executeQuery(nombreminENF);
+
+				System.out.println("La enfermedad con menos sintomas es: "+ rs9.getObject(1));
+			}
+			
+			String semTypes= "SELECT (semantic_type.semantic_type_id)"
+					+ "FROM SemanticType";
+			Statement  st10 = conn.createStatement();
+			ResultSet  rs10 = st10.executeQuery(semTypes);//todos los ids semantic
+			
+			while(rs10.next()) {
+				int semid = rs10.getInt(1);
+				String numSym = "SELECT (symptom.cui) "
+							+ "FROM SymptomSemanticType WHERE semantic_type_id= " + semid +";";
+				Statement  st11 = conn.createStatement();
+				ResultSet  rs11 = st11.executeQuery(numSym);//todos los sintomas asociados a un semantic
+				
+				String numSemTypes= "SELECT COUNT(semantic_type.semantic_type_id)"
+						+ "FROM SemanticType";
+				Statement  st12 = conn.createStatement();
+				ResultSet  rs12 = st12.executeQuery(numSemTypes);//numero total de semantics
+				
+				System.out.println("Tipo Semantico: " + rs10.getObject(1) + ", Sintomas asociados: " + rs11.getObject(1));
+				System.out.println("El numero total de Tipos Semanticos es: " + rs12.getObject(1));
+			}
+			
+			
+			
 		}
-
 		catch(SQLException ex){
 			System.err.println(ex.getMessage());
 		}
