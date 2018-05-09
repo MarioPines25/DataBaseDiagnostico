@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.sql.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Diagnostico {
@@ -13,6 +15,76 @@ public class Diagnostico {
 	private final String DATAFILE = "data/disease_data.data";
 	private Connection conn;
 	private Statement st;
+	
+	/* Antes de comenzar a la manipulacion de la base de datos, creamos
+	 * las estructuras de datos necesarias, para despues obtener cada uno 
+	 * de los datos del archivo en la creacion de la base. Las clases
+	 * serán :
+	 * 1. Sintoma de la enfermedad
+	 * 2. Enfermedades del archivo de datos y obtencion de los nombres
+	 * 3. Obtencion de los codigos&nombres
+	 * 
+	 *  Para facilitar la obtencion de estos datos, las clases tendran
+	 *  un metodo(decodificar) que separara mediante .split los datos del archivo de 
+	 *  entrada
+	 *  */
+	
+	private static class dCodigoYnombre{
+		
+		public final String codigo;
+		public final String nombre;
+		
+		private dCodigoYnombre(String codigo,String nombre){
+			this.codigo=codigo;
+			this.nombre=nombre;
+		}
+		
+		public static dCodigoYnombre decodificar (String entrada){
+			String [] datos = entrada.split("@");
+			return new dCodigoYnombre(datos[0],datos[1]);
+		}
+	}
+	
+	private static class dSintoma{
+		public final String sintoma;
+		public final String codSintoma;
+		public final String semType;
+		
+		private dSintoma (String sintoma, String codSintoma, String semType){
+			this.sintoma=sintoma;
+			this.codSintoma=codSintoma;
+			this.semType=semType;
+		}
+		public static dSintoma decodificar(String entrada){
+			String[]datos= entrada.split(";");
+			return new dSintoma(datos[0],datos[1],datos[2]);
+		}
+	}
+	
+	private static class dEnfermedad{
+		public final String nombreEnfermedad;
+		public final Set<dCodigoYnombre> fuentes;
+		public final Set<dSintoma> sintomas;
+		private dEnfermedad (String nombreEnfermedad, Set<dCodigoYnombre> fuentes, Set<dSintoma>sintomas){
+			this.nombreEnfermedad=nombreEnfermedad;
+			this.fuentes=fuentes;
+			this.sintomas=sintomas;
+		}
+		
+		public static dEnfermedad decodificar(String entrada){
+			String[]sep = entrada.split("="); //Separacion de enfermedades
+			String primero = sep[0];
+			String sints=sep[1];
+			
+			sep = primero.split(":");
+			String nombreEnf=sep[0];
+			String codigos=sep[1];
+			return new dEnfermedad(nombreEnf, Arrays.stream(codigos.split(";")).map(dCodigoYnombre::decodificar).collect(Collectors.toSet()),
+					Arrays.stream(sints.split(";")).map(dSintoma::decodificar).collect(Collectors.toSet()));
+			
+		}
+		
+	}
 	private void showMenu() {
 
 		int option = -1;
@@ -92,9 +164,9 @@ public class Diagnostico {
 			//CREACION DE TABLAS
 
 			// Tabla disease:
-			String disease = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease`("
-					+ "`disease_id` INT NOT NULL," 
-					+ "`name` VARCHAR(255) NOT NULL," 
+			String disease = "CREATE TABLE IF NOT EXIST`diagnostico`.`disease`("
+					+ "`disease_id` AUTO_INCREMENT," 
+					+ "`name` VARCHAR(255) UNIQUE," 
 					+ "PRIMARY KEY (`disease_id`));";
 			p = connection.prepareStatement(disease);
 			p.executeUpdate();
@@ -102,8 +174,8 @@ public class Diagnostico {
 
 			// Tabla symptom:
 			String symptom ="CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom` ("+
-					"`cui` VARCHAR(25) NOT NULL," +
-					"`name` VARCHAR(255) NOT NULL,"+
+					"`cui` VARCHAR(25) ," +
+					"`name` VARCHAR(255) UNIQUE,"+
 					"PRIMARY KEY (`cui`));";
 
 			p = connection.prepareStatement(symptom);
@@ -112,8 +184,8 @@ public class Diagnostico {
 
 			// Tabla source
 			String source = "CREATE TABLE IF NOT EXISTS `diagnostico`.`source` ( "+
-					"`source_id` INT NOT NULL," +
-					"`name` VARCHAR(255) NOT NULL," + 
+					"`source_id` INT AUTO_INCREMENT," +
+					"`name` VARCHAR(255) UNIQUE," + 
 					"PRIMARY KEY (`source_id`));";
 			p = connection.prepareStatement(source);
 			p.executeUpdate();
@@ -121,23 +193,17 @@ public class Diagnostico {
 
 			// Tabla code
 			String code="CREATE TABLE IF NOT EXISTS `diagnostico`.`code` ("+
-					"`code` VARCHAR(255) NOT NULL,"+
-					"`source_id_c` INT NOT NULL," +
-					"PRIMARY KEY (`code`),"+
-					"INDEX `source_id_c_idx` (`source_id_c` ASC)," +
-					"CONSTRAINT `source_id_c`" +
-					" FOREIGN KEY (`source_id_c`)" +
-					" REFERENCES `diagnostico`.`source` (`source_id`)" +
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
+					"code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (code, source_id), " +
+					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = connection.prepareStatement(code);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla semantic_type
 			String semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`semantic_type` (" +
-					"`semantic_type_id` INT NOT NULL," +
-					"`cui` VARCHAR(45) NOT NULL," +
+					"`semantic_type_id` INT AUTO_INCREMENT," +
+					"`cui` VARCHAR(45) UNIQUE," +
 					"PRIMARY KEY (`semantic_type_id`));";
 			p = connection.prepareStatement(semantic_type);
 			p.executeUpdate();
@@ -145,40 +211,20 @@ public class Diagnostico {
 
 			// Tabla symptom_semantic_type
 			String symptom_semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom_semantic_type` (" +
-					"`cui_sst` VARCHAR(25) NOT NULL," +
-					"`semantic_type_id_sst` INT NOT NULL," +
-					"INDEX (`cui_sst` ASC)," +
-					"INDEX `semantic_type_id_sst_idx` (`semantic_type_id_sst` ASC)," +
-					" CONSTRAINT `cui_sst`"+
-					" FOREIGN KEY (`cui_sst`)"+
-					" REFERENCES `diagnostico`.`symptom` (`cui`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `semantic_type_id_sst`"+
-					" FOREIGN KEY (`semantic_type_id_sst`)"+
-					" REFERENCES `diagnostico`.`semantic_type` (`semantic_type_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
+					"cui VARCHAR(25), semantic_type_id INT, " +
+					"PRIMARY KEY (cui, semantic_type_id), " +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = connection.prepareStatement(symptom_semantic_type);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla disease_symptom
 			String disease_symptom = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_symptom` (" +
-					"`disease_id_ds` INT NOT NULL," +
-					"`cui_ds` VARCHAR(45) NOT NULL," +
-					"INDEX `disease_id_ds_idx` (`disease_id_ds` ASC)," +
-					"INDEX `cui_ds_idx` (`cui_ds` ASC)," +
-					" CONSTRAINT `disease_id_ds`" +
-					" FOREIGN KEY (`disease_id_ds`)" +
-					" REFERENCES `diagnostico`.`disease` (`disease_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `cui_ds`" +
-					" FOREIGN KEY (`cui_ds`)" +
-					" REFERENCES `diagnostico`.`symptom` (`cui`)" +
-					" ON DELETE NO ACTION" +
-					" ON UPDATE NO ACTION);";
+					"disease_id INT, cui VARCHAR(25)," +
+					"PRIMARY KEY (disease_id, cui)," +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = connection.prepareStatement(disease_symptom);
 			p.executeUpdate();
 			p.close();	
@@ -187,37 +233,37 @@ public class Diagnostico {
 
 			//Tabla disease_has_code
 			String disease_has_code = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_has_code` (" +
-					"`disease_id_dhc` INT NULL," +
-					"`code_dhc` VARCHAR(255) NULL," +
-					"`source_id_dhc` INT NULL," +
-					"INDEX `disease_id_dhc_idx` (`disease_id_dhc` ASC),"+
-					"INDEX `code_dhc_idx` (`code_dhc` ASC)," +
-					"INDEX `source_id_dhc_idx` (`source_id_dhc` ASC),"+
-					" CONSTRAINT `disease_id_dhc`" +
-					" FOREIGN KEY (`disease_id_dhc`)"+
-					" REFERENCES `diagnostico`.`disease` (`disease_id`)" +
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION," +
-					" CONSTRAINT `code_dhc`" +
-					" FOREIGN KEY (`code_dhc`)"+
-					" REFERENCES `diagnostico`.`code` (`code`)"+
-					" ON DELETE NO ACTION" +
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `source_id_dhc`"+
-					" FOREIGN KEY (`source_id_dhc`)" +
-					" REFERENCES `diagnostico`.`source` (`source_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
+					"disease_id INT, code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (disease_id, code, source_id), " +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = connection.prepareStatement(disease_has_code);
 			p.executeUpdate();
 			p.close();	
 
-
+			//Tomamos las enfermedades del archivo de entrada
+			Set<dEnfermedad> enfermedades= readData().stream()
+					.map(dEnfermedad::decodificar)
+					.collect(Collectors.toSet());
+			/* A continuacion, necesitamos crear dos mapas para las 
+			 ids y tipos semanticos conocidos */
+			Map<String, Integer> idsConocidas=new HashMap<>();
+			Map<String, Integer> stConocidos=new HashMap<>();
+			//realizamos lo mismo para los sintomas conocidos
+			Set<String> sintConocidos = new HashSet<>();
+			
+			//Recorremos el archivo de entrada
+			for(dEnfermedad enfermedad : enfermedades){
+				String query = "INSERT INTO disease (name) VALUES (?)";
+				
+				
+			}
 
 			//Obtencion de los datos a traves del archivo DATA
 
 						
-						LinkedList<String> list = readData();
+						/*LinkedList<String> list = readData();
 						String []enfermedades;
 						String []codVoc;
 						String []codigo;
@@ -244,7 +290,7 @@ public class Diagnostico {
 								System.out.println(sintomas[j]);
 								elementos= sintomas[j].split(":");
 								
-						}
+						}*/
 							
 							
 			/*
