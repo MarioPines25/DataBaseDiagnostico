@@ -280,18 +280,30 @@ public class Diagnostico {
 		//listarSintomasCui();
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
-		//String entrada = readString();
+		
 
 		for(int i = 0; i < 6; i++) {
 			String entrada = readString();
 			sintomas.add(entrada);
 			System.out.print("Ingresar otro sintoma?[s/n]");
-			String respuesta = readString();
-			if(!respuesta.equals("n") || !respuesta.equals("s")) {
-				System.out.println("Introduce un sintoma");
+			entrada = readString();
+
+			if(!entrada.equals("n") && !entrada.equals("s")) {
+				System.out.println("Error, introduce de nuevo el sintoma");
+				boolean correcto = false;
+				while (!correcto){
+					System.out.print("[s/n]");
+					entrada = readString();
+					if(!entrada.equals("n") && !entrada.equals("s"))
+						correcto = false;
+					else
+						correcto = true;
+				}
+
 				i--;
+
 			}
-			if(respuesta.equals("n")) {
+			if(entrada.equals("n")) {
 				n++;
 				break;
 			}
@@ -325,11 +337,11 @@ public class Diagnostico {
 				+ "FROM Symptom"
 				+ "WHERE symptom.cui = " + list + ";";
 
-		Statement st =  conn.createStatement();
-		ResultSet rs = st.executeQuery(sintoma);
-		while(rs.next()){
-			System.out.println(rs.getObject(2));
-		}
+		//		Statement st =  conn.createStatement();
+		//		ResultSet rs = st.executeQuery(sintoma);
+		//		 while(rs.next()){
+		//			 System.out.println(rs.getObject(2));
+		//		 }
 
 	}
 
