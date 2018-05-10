@@ -14,7 +14,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-　
+
 public class Diagnostico {
 
 	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
@@ -58,6 +58,7 @@ public class Diagnostico {
 
 	}
 
+
 	private static class dEnfermedad{
 		public final String nombreEnfermedad;
 		public final LinkedList<dCodigoYnombre> fuentes;
@@ -68,12 +69,12 @@ public class Diagnostico {
 			this.sintomas=sintomas;
 		}
 
-　
+
 	}
 
-　
+
 	//Metodo auxiliar que limpia los elementos repetidos de la lista
-	private LinkedList<dSintoma> eraseRepeated(LinkedList<dSintoma>list){
+	private LinkedList<dSintoma> eraseRepeatedCodSintoma(LinkedList<dSintoma>list){
 		for(int i=0;i<list.size();i++){
 			for(int j=i+1;j<list.size();j++){
 				if(list.get(i).codSintoma.equals(list.get(j).codSintoma)){
@@ -91,14 +92,9 @@ public class Diagnostico {
 		for(int i = 0; i < list.size(); i++){
 			a.add(list.get(i).semType);
 		}
-
-		Set<String> hs = new HashSet<>();
-		hs.addAll(a);
-		a.clear();
-		a.addAll(hs);
+		limpiar(a);
 		return a;
 	}
-	
 
 	private LinkedList<String> eraseRepeatedSourceCode(LinkedList<dCodigoYnombre>list){
 
@@ -107,17 +103,18 @@ public class Diagnostico {
 		for(int i = 0; i < list.size(); i++){
 			a.add(list.get(i).nombre);
 		}
-
-		Set<String> hs = new HashSet<>();
-		hs.addAll(a);
-		a.clear();
-		a.addAll(hs);
+		limpiar(a);
 		return a;
 	}
 
-　
-　
-　
+	private void limpiar(LinkedList<String>list){
+		Set<String> hs = new HashSet<>();
+		hs.addAll(list);
+		list.clear();
+		list.addAll(hs);		
+	}
+
+
 	private void showMenu() {
 
 		int option = -1;
@@ -206,7 +203,7 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-　
+
 			// Tabla symptom:
 			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
 
@@ -252,8 +249,8 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-　
-　
+
+
 			//Tabla disease_has_code
 			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
 					"PRIMARY KEY (disease_id, code, source_id), " +
@@ -264,7 +261,7 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-　
+
 			//Obtencion de los datos segun DATA
 
 			LinkedList<String>list = readData();
@@ -302,8 +299,9 @@ public class Diagnostico {
 			}
 
 			//tabla sintoma
+
 			String query3 ="INSERT INTO diagnostico.symptom (cui, name) VALUES (?,?)";
-			LinkedList<dSintoma> sinRepetidos=eraseRepeated(sintomas);
+			LinkedList<dSintoma> sinRepetidos=eraseRepeatedCodSintoma(sintomas);
 			PreparedStatement pst3 = conn.prepareStatement(query3);
 			for(int i = 0; i<sinRepetidos.size();i++){
 				pst3.setString(1, sinRepetidos.get(i).codSintoma);
@@ -319,31 +317,29 @@ public class Diagnostico {
 				pst4.setString(1, sinRepetidos2.get(i));
 				pst4.executeUpdate();
 			}
-
 			//Tabla source
-			   String query5= "INSERT INTO diagnostico.source (name) VALUES (?)";
-			   LinkedList<String> sinRepetidos3 = eraseRepeatedSourceCode(codigos);
-			   PreparedStatement pst5=conn.prepareStatement(query5);
-			   for(int i=0; i<sinRepetidos3.size();i++){
-			    pst5.setString(1, sinRepetidos3.get(i));
-			    pst5.executeUpdate();
-			   }
+		      String query5= "INSERT INTO diagnostico.source (name) VALUES (?)";
+		      LinkedList<String> sinRepetidos3 = eraseRepeatedSourceCode(codigos);
+		      PreparedStatement pst5=conn.prepareStatement(query5);
+		      for(int i=0; i<sinRepetidos3.size();i++){
+		       pst5.setString(1, sinRepetidos3.get(i));
+		       pst5.executeUpdate();
+		      }
 
-　
+
+
+
+
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 
 	}
-
-　
 	private void realizarDiagnostico() throws Exception{
 		int n = 0;
 		//listarSintomasCui();
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
-
-　
 		for(int i = 0; i < 6; i++) {
 			String entrada = readString();
 			sintomas.add(entrada);
@@ -469,7 +465,6 @@ public class Diagnostico {
 		}
 	}
 
-　
 	private void listarEnfermedadesYCodigosAsociados() throws Exception {
 		try {
 			conectar();
@@ -541,7 +536,6 @@ public class Diagnostico {
 				System.out.println("Sintoma: " + rs.getObject(1) + " , Tipo Semantico: " + rs2.getObject(1) );
 			}
 
-　
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
@@ -678,7 +672,6 @@ public class Diagnostico {
 			average=suma/contador;
 			System.out.println("El numero medio de sintomas: "+average);
 
-　
 		}
 		catch(SQLException ex){
 			System.err.println(ex.getMessage());
