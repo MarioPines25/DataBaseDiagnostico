@@ -302,7 +302,6 @@ public class Diagnostico {
 			}
 
 			//tabla sintoma
-
 			String query3 ="INSERT INTO diagnostico.symptom (cui, name) VALUES (?,?)";
 			LinkedList<dSintoma> sinRepetidos=eraseRepeated(sintomas);
 			PreparedStatement pst3 = conn.prepareStatement(query3);
