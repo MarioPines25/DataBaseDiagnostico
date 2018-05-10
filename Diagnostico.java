@@ -85,13 +85,13 @@ public class Diagnostico {
 	}
 
 	private LinkedList<dSintoma> eraseRepeatedSemType(LinkedList<dSintoma>list){
-		for(int i=0;i<list.size();i++){
-			for(int j=i+1;j<list.size();j++){
-				if(list.get(i).semType.equals(list.get(j).semType)){
-					list.remove(j);
+				for(int i=0;i<list.size();i++){
+					for(int j = i+1;j < list.size(); j++){
+						if(list.get(i).semType.equals(list.get(j).semType)){
+							list.remove(j);
+						}
+					}
 				}
-			}
-		}
 		return list;
 	}
 
@@ -292,7 +292,7 @@ public class Diagnostico {
 
 			//tabla semantic_type
 			String query4 = "INSERT INTO diagnostico.semantic_type (cui) VALUES (?)";
-			LinkedList<dSintoma> sinRepetidos2=eraseRepeatedSemType(sintomas);
+			LinkedList<dSintoma> sinRepetidos2 = eraseRepeatedSemType(sintomas);
 			PreparedStatement pst4=conn.prepareStatement(query4);
 			for(int i=0;i<sinRepetidos2.size();i++){
 				pst4.setString(1, sinRepetidos2.get(i).semType);
