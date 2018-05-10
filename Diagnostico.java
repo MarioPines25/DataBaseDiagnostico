@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class Diagnostico {
 
-	private final String DATAFILE = "data/disease_data.data";
+	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
 	private Connection conn;
 	private Statement st;
 	
@@ -151,6 +151,7 @@ public class Diagnostico {
 		String pass = "bddx_pwd";
 		String url= "jdbc:mysql://"+ serverAddress+"/";
 		conn = DriverManager.getConnection(url, user, pass);
+		conn.setCatalog("diagnostico");
 		System.out.println("Conectado a la base de datos!");
 
 	}
@@ -163,42 +164,40 @@ public class Diagnostico {
 				conectar();
 			}
 			
-			PreparedStatement pst = conn.prepareStatement("CREATE SCHEMA IF NOT EXISTS `diagnostico`  DEFAULT CHARACTER SET utf8;");
+			PreparedStatement pst = conn.prepareStatement("DROP DATABASE diagnostico;");
 			pst.executeUpdate();
+			PreparedStatement ps = conn.prepareStatement("CREATE DATABASE diagnostico;");
+			ps.executeUpdate();
 
 			//CREACION DE TABLAS
 
 			// Tabla disease:
-			String disease = "CREATE TABLE IF NOT EXIST`diagnostico`.`disease`("
-					+ "`disease_id` AUTO_INCREMENT," 
-					+ "`name` VARCHAR(255) UNIQUE," 
-					+ "PRIMARY KEY (`disease_id`));";
+			
+			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p.close();	
+			
+			/*String disease = "CREATE TABLE disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			p = conn.prepareStatement(disease);
+			p.executeUpdate();
+			p.close();	*/
 
 			// Tabla symptom:
-			String symptom ="CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom` ("+
-					"`cui` VARCHAR(25) ," +
-					"`name` VARCHAR(255) UNIQUE,"+
-					"PRIMARY KEY (`cui`));";
+			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
 
 			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla source
-			String source = "CREATE TABLE IF NOT EXISTS `diagnostico`.`source` ( "+
-					"`source_id` INT AUTO_INCREMENT," +
-					"`name` VARCHAR(255) UNIQUE," + 
-					"PRIMARY KEY (`source_id`));";
+			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(source);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla code
-			String code="CREATE TABLE IF NOT EXISTS `diagnostico`.`code` ("+
-					"code VARCHAR(255), source_id INT, " +
+			String code="CREATE TABLE diagnostico.code (code VARCHAR(255), source_id INT, " +
 					"PRIMARY KEY (code, source_id), " +
 					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(code);
@@ -206,17 +205,13 @@ public class Diagnostico {
 			p.close();	
 
 			// Tabla semantic_type
-			String semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`semantic_type` (" +
-					"`semantic_type_id` INT AUTO_INCREMENT," +
-					"`cui` VARCHAR(45) UNIQUE," +
-					"PRIMARY KEY (`semantic_type_id`));";
+			String semantic_type = "CREATE TABLE diagnostico.semantic_type (semantic_type_id INT PRIMARY KEY AUTO_INCREMENT,cui VARCHAR(45) UNIQUE)";
 			p = conn.prepareStatement(semantic_type);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla symptom_semantic_type
-			String symptom_semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom_semantic_type` (" +
-					"cui VARCHAR(25), semantic_type_id INT, " +
+			String symptom_semantic_type = "CREATE TABLE diagnostico.symptom_semantic_type (cui VARCHAR(25), semantic_type_id INT, " +
 					"PRIMARY KEY (cui, semantic_type_id), " +
 					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
@@ -225,8 +220,7 @@ public class Diagnostico {
 			p.close();	
 
 			// Tabla disease_symptom
-			String disease_symptom = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_symptom` (" +
-					"disease_id INT, cui VARCHAR(25)," +
+			String disease_symptom = "CREATE TABLE diagnostico.disease_symptom (disease_id INT, cui VARCHAR(25)," +
 					"PRIMARY KEY (disease_id, cui)," +
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
 					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
@@ -237,8 +231,7 @@ public class Diagnostico {
 
 
 			//Tabla disease_has_code
-			String disease_has_code = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_has_code` (" +
-					"disease_id INT, code VARCHAR(255), source_id INT, " +
+			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
 					"PRIMARY KEY (disease_id, code, source_id), " +
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
@@ -297,11 +290,11 @@ public class Diagnostico {
 			String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
 			PreparedStatement psts= conn.prepareStatement(query);
 			for(int i=0; i<codigos.size();i++){
-				pst.setString(1, codigos.get(i).codigo);
-				pst.setInt(2, codigos.get(i).hashCode());
-				pst.executeUpdate();
+				psts.setString(1, codigos.get(i).codigo);
+				psts.setInt(2, codigos.get(i).hashCode());
+				psts.executeUpdate();
 			}
-			pst.close();
+			psts.close();
 			
 			//tabla disease
 			String query2 = "INSERT INTO disease (name) VALUES (?);";
