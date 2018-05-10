@@ -43,11 +43,6 @@ public class Diagnostico {
 			this.codigo=codigo;
 			this.nombre=nombre;
 		}
-		
-		public static dCodigoYnombre decodificar (String entrada){
-			String [] datos = entrada.split("@");
-			return new dCodigoYnombre(datos[0],datos[1]);
-		}
 	}
 	
 	private static class dSintoma{
@@ -59,10 +54,6 @@ public class Diagnostico {
 			this.sintoma=sintoma;
 			this.codSintoma=codSintoma;
 			this.semType=semType;
-		}
-		public static dSintoma decodificar(String entrada){
-			String[]datos= entrada.split(";");
-			return new dSintoma(datos[0],datos[1],datos[2]);
 		}
 	}
 	
@@ -76,20 +67,20 @@ public class Diagnostico {
 			this.sintomas=sintomas;
 		}
 		
-//		public static dEnfermedad decodificar(String entrada){
-//			String[]sep = entrada.split("="); //Separacion de enfermedades
-//			String primero = sep[0];
-//			String sints=sep[1];
-//			
-//			sep = primero.split(":");
-//			String nombreEnf=sep[0];
-//			String codigos=sep[1];
-//			return new dEnfermedad(nombreEnf, Arrays.stream(codigos.split(";")).map(dCodigoYnombre::decodificar).collect(Collectors.toSet()),
-//					Arrays.stream(sints.split(";")).map(dSintoma::decodificar).collect(Collectors.toSet()));
-//			
-//		}
 		
 	}
+	
+	private void rmDplcSintoma(LinkedList<dSintoma> listS, dSintoma s){
+		boolean find = true;
+		for(int i =0; i<listS.size()&&!find;i++){
+			if(listS.get(i).codSintoma.equals(s.codSintoma)){
+				listS.remove(i);
+				find=true;
+			}
+			
+		}
+	}
+	
 	private void showMenu() {
 
 		int option = -1;
@@ -178,10 +169,6 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 			
-			/*String disease = "CREATE TABLE disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
-			p = conn.prepareStatement(disease);
-			p.executeUpdate();
-			p.close();	*/
 
 			// Tabla symptom:
 			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
@@ -240,23 +227,6 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-			/*Tomamos las enfermedades del archivo de entrada
-			Set<dEnfermedad> enfermedades= readData().stream()
-					.map(dEnfermedad::decodificar)
-					.collect(Collectors.toSet());
-			 //A continuacion, necesitamos crear dos mapas para las 
-			 //ids y tipos semanticos conocidos 
-			Map<String, Integer> idsConocidas=new HashMap<>();
-			Map<String, Integer> stConocidos=new HashMap<>();
-			//realizamos lo mismo para los sintomas conocidos
-			Set<String> sintConocidos = new HashSet<>();
-			
-			//Recorremos el archivo de entrada
-			for(dEnfermedad enfermedad : enfermedades){
-				String query = "INSERT INTO disease (name) VALUES (?)";
-				
-				
-			}*/
 			
 			//Obtencion de los datos segun DATA
 			
@@ -269,7 +239,7 @@ public class Diagnostico {
 				String [] primeraSep = list.get(i).split("=");
 				String [] segundaSep=primeraSep[0].split(":");
 				String [] codVoc= segundaSep[1].split(";");
-				for(int j=0;j<codVoc.length;i++){
+				for(int j=0;j<codVoc.length;j++){
 					String[]datosCyV=codVoc[j].split("@");
 					dCodigoYnombre cod = new dCodigoYnombre(datosCyV[0], datosCyV[1]);
 					codigos.add(cod);
@@ -287,70 +257,35 @@ public class Diagnostico {
 			//Introduccion de los datos en tablas
 			
 			//tabla code
-			String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
+			/*String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
 			PreparedStatement psts= conn.prepareStatement(query);
 			for(int i=0; i<codigos.size();i++){
 				psts.setString(1, codigos.get(i).codigo);
 				psts.setInt(2, codigos.get(i).hashCode());
 				psts.executeUpdate();
 			}
-			psts.close();
+			psts.close();*/
+			
+			
 			
 			//tabla disease
-			String query2 = "INSERT INTO disease (name) VALUES (?);";
+			String query2 = "INSERT INTO diagnostico.disease (name) VALUES (?);";
 			PreparedStatement pst2= conn.prepareStatement(query2);
 			for(int i=0; i<todasLasEnfermedades.size();i++){
 				pst2.setString(1, todasLasEnfermedades.get(i).nombreEnfermedad);
 				pst2.executeUpdate();
 			}
+			
+			//tabla sintoma
+			String query3 ="INSERT INTO diagnostico.symptom (cui, name) VALUES (?,?)";
+			PreparedStatement pst3 = conn.prepareStatement(query3);
+			for(int i = 0; i<sintomas.size();i++){
+				pst3.setString(1, sintomas.get(i).codSintoma);
+				pst3.setString(2, sintomas.get(i).sintoma);
+				rmDplcSintoma(sintomas,sintomas.get(i));
+				pst3.executeUpdate();
+			}
 
-			//Obtencion de los datos a traves del archivo DATA
-
-						
-						/*LinkedList<String> list = readData();
-						String []enfermedades;
-						String []codVoc;
-						String []codigo;
-						String[]enfSint;//array de enfermedades y sintomas
-			
-			
-						for (int i = 0; i < list.size(); i++) {
-							enfSint = list.get(i).split("=",2);
-							//COMIENZO PARTE IZQUIERDA ARBOL
-							enfermedades=enfSint[0].split(":");
-							codVoc=enfermedades[1].split(";");
-			
-							for(int j=0;j<codVoc.length;j++){
-								//conseguimos codigos y vocabularios
-								codigo=codVoc[j].split("@");
-							}
-							//FIN PARTE IZQUIERDA ARBOL
-			
-							//COMIENZO PARTE DERECHA ARBOL
-							String [] sintomas;
-							String [] elementos;
-							sintomas = enfSint[1].split(";");
-							for (int j=0; j<sintomas.length;j++){
-								System.out.println(sintomas[j]);
-								elementos= sintomas[j].split(":");
-								
-						}*/
-							
-							
-			/*
-			 * A la salida de los bucles, los datos se distribuyen:
-			 * 		enfermedades = 	contiene el nombre de todas las enfermedades (0-10 --> 11 enfermedades)
-			 * 		codVoc = 		tiene el codigo y el vocabulario de cada enfermedad.
-			 * 		codigo = 		posiciones pares: codigo
-			 * 				 		posiciones impares: vocabulario
-			 * 		elementos =		(diferencia entre elementos = 3)
-			 * 						contiene el sintoma, su codigo y tipo semantico. 
-			 * 
-			 * Cada iteración ira haciendo esta separaciones por lo que debemos introducir en cada una
-			 * de las tablas los datos necesarios de cada array.
-			 */
-
-//						}
 			
 			
 						
