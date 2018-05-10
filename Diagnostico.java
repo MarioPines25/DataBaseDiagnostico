@@ -84,16 +84,22 @@ public class Diagnostico {
 		return list;
 	}
 
-	private LinkedList<dSintoma> eraseRepeatedSemType(LinkedList<dSintoma>list){
-				for(int i=0;i<list.size();i++){
-					for(int j = i+1;j < list.size(); j++){
-						if(list.get(i).semType.equals(list.get(j).semType)){
-							list.remove(j);
-						}
-					}
-				}
-		return list;
-	}
+	private LinkedList<String> eraseRepeatedSemType(LinkedList<dSintoma>list){
+
+		LinkedList<String> a = new LinkedList<>();
+
+		for(int i = 0; i < list.size(); i++){
+			a.add(list.get(i).semType);
+		}
+
+		Set<String> hs = new HashSet<>();
+		hs.addAll(a);
+		a.clear();
+		a.addAll(hs);
+		return a;
+		}
+		
+	
 
 
 	private void showMenu() {
@@ -292,10 +298,10 @@ public class Diagnostico {
 
 			//tabla semantic_type
 			String query4 = "INSERT INTO diagnostico.semantic_type (cui) VALUES (?)";
-			LinkedList<dSintoma> sinRepetidos2 = eraseRepeatedSemType(sintomas);
+			LinkedList<String> sinRepetidos2 = eraseRepeatedSemType(sintomas);
 			PreparedStatement pst4=conn.prepareStatement(query4);
 			for(int i=0;i<sinRepetidos2.size();i++){
-				pst4.setString(1, sinRepetidos2.get(i).semType);
+				pst4.setString(1, sinRepetidos2.get(i));
 				pst4.executeUpdate();
 			}
 
