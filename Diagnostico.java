@@ -3,7 +3,7 @@ Actualización del 10/05:
 	-Se ha añadido el algoritmo de insertar datos: hay que hacer test
 	-Hay que revisar sentencias SQL de creación de tablas "You have an error in your SQL syntax; 
 	check the manual that corresponds to your MySQL server version for the right syntax to use near".
-*/
+ */
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -20,7 +20,7 @@ public class Diagnostico {
 	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
 	private Connection conn;
 	private Statement st;
-	
+
 	/* Antes de comenzar a la manipulacion de la base de datos, creamos
 	 * las estructuras de datos necesarias, para despues obtener cada uno 
 	 * de los datos del archivo en la creacion de la base. Las clases
@@ -33,30 +33,31 @@ public class Diagnostico {
 	 *  un metodo(decodificar) que separara mediante .split los datos del archivo de 
 	 *  entrada
 	 *  */
-	
+
 	private static class dCodigoYnombre{
-		
+
 		public final String codigo;
 		public final String nombre;
-		
+
 		private dCodigoYnombre(String codigo,String nombre){
 			this.codigo=codigo;
 			this.nombre=nombre;
 		}
 	}
-	
+
 	private static class dSintoma{
 		public final String sintoma;
 		public final String codSintoma;
 		public final String semType;
-		
+
 		private dSintoma (String sintoma, String codSintoma, String semType){
 			this.sintoma=sintoma;
 			this.codSintoma=codSintoma;
 			this.semType=semType;
 		}
+
 	}
-	
+
 	private static class dEnfermedad{
 		public final String nombreEnfermedad;
 		public final LinkedList<dCodigoYnombre> fuentes;
@@ -66,21 +67,35 @@ public class Diagnostico {
 			this.fuentes=fuentes;
 			this.sintomas=sintomas;
 		}
-		
-		
+
+
 	}
-	
-	private void rmDplcSintoma(LinkedList<dSintoma> listS, dSintoma s){
-		boolean find = true;
-		for(int i =0; i<listS.size()&&!find;i++){
-			if(listS.get(i).codSintoma.equals(s.codSintoma)){
-				listS.remove(i);
-				find=true;
+
+
+	//Metodo auxiliar que limpia los elementos repetidos de la lista
+	private LinkedList<dSintoma> eraseRepeated(LinkedList<dSintoma>list){
+		for(int i=0;i<list.size();i++){
+			for(int j=i+1;j<list.size();j++){
+				if(list.get(i).codSintoma.equals(list.get(j).codSintoma)){
+					list.remove(j);
+				}
 			}
-			
 		}
+		return list;
 	}
-	
+
+	private LinkedList<dSintoma> eraseRepeatedSemType(LinkedList<dSintoma>list){
+		for(int i=0;i<list.size();i++){
+			for(int j=i+1;j<list.size();j++){
+				if(list.get(i).semType.equals(list.get(j).semType)){
+					list.remove(j);
+				}
+			}
+		}
+		return list;
+	}
+
+
 	private void showMenu() {
 
 		int option = -1;
@@ -154,7 +169,7 @@ public class Diagnostico {
 			if(conn==null) {
 				conectar();
 			}
-			
+
 			PreparedStatement pst = conn.prepareStatement("DROP DATABASE diagnostico;");
 			pst.executeUpdate();
 			PreparedStatement ps = conn.prepareStatement("CREATE DATABASE diagnostico;");
@@ -163,12 +178,12 @@ public class Diagnostico {
 			//CREACION DE TABLAS
 
 			// Tabla disease:
-			
+
 			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p.close();	
-			
+
 
 			// Tabla symptom:
 			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
@@ -227,15 +242,15 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-			
+
 			//Obtencion de los datos segun DATA
-			
+
 			LinkedList<String>list = readData();
 			LinkedList<dEnfermedad>todasLasEnfermedades = new LinkedList<dEnfermedad>();
 			LinkedList<dCodigoYnombre>codigos= new LinkedList<dCodigoYnombre>();
 			LinkedList<dSintoma> sintomas= new LinkedList<dSintoma>();
 			for(int i=0; i<list.size();i++){
-				
+
 				String [] primeraSep = list.get(i).split("=");
 				String [] segundaSep=primeraSep[0].split(":");
 				String [] codVoc= segundaSep[1].split(";");
@@ -253,21 +268,9 @@ public class Diagnostico {
 				dEnfermedad e=new dEnfermedad (segundaSep[0],codigos,sintomas);
 				todasLasEnfermedades.add(e);
 			}
-			
+
 			//Introduccion de los datos en tablas
-			
-			//tabla code
-			/*String query="INSERT INTO diagnostico.code(code,source_id_code VALUES (?,?);";
-			PreparedStatement psts= conn.prepareStatement(query);
-			for(int i=0; i<codigos.size();i++){
-				psts.setString(1, codigos.get(i).codigo);
-				psts.setInt(2, codigos.get(i).hashCode());
-				psts.executeUpdate();
-			}
-			psts.close();*/
-			
-			
-			
+
 			//tabla disease
 			String query2 = "INSERT INTO diagnostico.disease (name) VALUES (?);";
 			PreparedStatement pst2= conn.prepareStatement(query2);
@@ -275,20 +278,30 @@ public class Diagnostico {
 				pst2.setString(1, todasLasEnfermedades.get(i).nombreEnfermedad);
 				pst2.executeUpdate();
 			}
-			
+
 			//tabla sintoma
+
 			String query3 ="INSERT INTO diagnostico.symptom (cui, name) VALUES (?,?)";
+			LinkedList<dSintoma> sinRepetidos=eraseRepeated(sintomas);
 			PreparedStatement pst3 = conn.prepareStatement(query3);
-			for(int i = 0; i<sintomas.size();i++){
-				pst3.setString(1, sintomas.get(i).codSintoma);
-				pst3.setString(2, sintomas.get(i).sintoma);
-				rmDplcSintoma(sintomas,sintomas.get(i));
+			for(int i = 0; i<sinRepetidos.size();i++){
+				pst3.setString(1, sinRepetidos.get(i).codSintoma);
+				pst3.setString(2, sinRepetidos.get(i).sintoma);
 				pst3.executeUpdate();
 			}
 
-			
-			
-						
+			//tabla semantic_type
+			String query4 = "INSERT INTO diagnostico.semantic_type (cui) VALUES (?)";
+			LinkedList<dSintoma> sinRepetidos2=eraseRepeatedSemType(sintomas);
+			PreparedStatement pst4=conn.prepareStatement(query4);
+			for(int i=0;i<sinRepetidos2.size();i++){
+				pst4.setString(1, sinRepetidos2.get(i).semType);
+				pst4.executeUpdate();
+			}
+
+
+
+
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
@@ -301,7 +314,7 @@ public class Diagnostico {
 		//listarSintomasCui();
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
-		
+
 
 		for(int i = 0; i < 6; i++) {
 			String entrada = readString();
@@ -369,15 +382,15 @@ public class Diagnostico {
 	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
 		try {
 			String sintomas = "SELECT (Symptom.name) "
-							+ "FROM Symptom;";
+					+ "FROM Symptom;";
 			Statement st = conn.createStatement();
 			ResultSet rs = st.executeQuery(sintomas);
-			
+
 			String codSintomas = "SELECT (Symptom.cui) "
 					+ "FROM Symptom;";
 			Statement st1 = conn.createStatement();
 			ResultSet rs1 = st1.executeQuery(codSintomas);
-			
+
 			while(rs.next() && rs1.next()) {
 				System.out.println("Sintoma: " + rs.getObject(1) + " , Codigo: " + rs1.getObject(1));	
 			}
@@ -596,24 +609,24 @@ public class Diagnostico {
 
 				System.out.println("La enfermedad con menos sintomas es: "+ rs9.getObject(1));
 			}
-			
+
 			String semTypes= "SELECT (semantic_type.semantic_type_id)"
 					+ "FROM SemanticType";
 			Statement  st10 = conn.createStatement();
 			ResultSet  rs10 = st10.executeQuery(semTypes);//todos los ids semantic
-			
+
 			while(rs10.next()) {
 				int semid = rs10.getInt(1);
 				String numSym = "SELECT (symptom.cui) "
-							+ "FROM SymptomSemanticType WHERE semantic_type_id= " + semid +";";
+						+ "FROM SymptomSemanticType WHERE semantic_type_id= " + semid +";";
 				Statement  st11 = conn.createStatement();
 				ResultSet  rs11 = st11.executeQuery(numSym);//todos los sintomas asociados a un semantic
-				
+
 				String numSemTypes= "SELECT COUNT(semantic_type.semantic_type_id)"
 						+ "FROM SemanticType";
 				Statement  st12 = conn.createStatement();
 				ResultSet  rs12 = st12.executeQuery(numSemTypes);//numero total de semantics
-				
+
 				System.out.println("Tipo Semantico: " + rs10.getObject(1) + ", Sintomas asociados: " + rs11.getObject(1));
 				System.out.println("El numero total de Tipos Semanticos es: " + rs12.getObject(1));
 			}
@@ -636,8 +649,8 @@ public class Diagnostico {
 			}
 			average=suma/contador;
 			System.out.println("El numero medio de sintomas: "+average);
-			
-			
+
+
 		}
 		catch(SQLException ex){
 			System.err.println(ex.getMessage());
