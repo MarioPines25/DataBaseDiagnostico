@@ -6,13 +6,20 @@ Actualización del 10/05:
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 
 public class Diagnostico {
@@ -27,93 +34,112 @@ public class Diagnostico {
 	 * serán :
 	 * 1. Sintoma de la enfermedad
 	 * 2. Enfermedades del archivo de datos y obtencion de los nombres
-	 * 3. Obtencion de los codigos&nombres
+	 * 3. Obtencion de las fuentes de las enfermedades
 	 * 
 	 *  Para facilitar la obtencion de estos datos, las clases tendran
 	 *  un metodo(decodificar) que separara mediante .split los datos del archivo de 
 	 *  entrada
 	 *  */
 
-	private static class dCodigoYnombre{
-
+	private static class DatosFuente {
 		public final String codigo;
 		public final String nombre;
 
-		private dCodigoYnombre(String codigo,String nombre){
-			this.codigo=codigo;
-			this.nombre=nombre;
+		private DatosFuente(String codigo, String nombre) {
+			this.codigo = codigo;
+			this.nombre = nombre;
+		}
+
+		public static DatosFuente codificar(String ent) {
+			String[] d = ent.split("@");
+			return new DatosFuente(d[0], d[1]);
 		}
 	}
 
-	private static class dSintoma{
+	private static class DatosSintomas {
 		public final String sintoma;
-		public final String codSintoma;
-		public final String semType;
+		public final String codigoSintoma;
+		public final String tipoSemantico;
 
-		private dSintoma (String sintoma, String codSintoma, String semType){
-			this.sintoma=sintoma;
-			this.codSintoma=codSintoma;
-			this.semType=semType;
+		private DatosSintomas(String sintoma, String codigoSintoma,
+								String tipoSemantico) {
+			this.sintoma = sintoma;
+			this.codigoSintoma = codigoSintoma;
+			this.tipoSemantico = tipoSemantico;
 		}
 
+		public static DatosSintomas codificar(String ent) {
+			String[] d = ent.split(":");
+			return new DatosSintomas(d[0], d[1], d[2]);
+		}
 	}
 
 
-	private static class dEnfermedad{
-		public final String nombreEnfermedad;
-		public final LinkedList<dCodigoYnombre> fuentes;
-		public final LinkedList<dSintoma> sintomas;
-		private dEnfermedad (String nombreEnfermedad, LinkedList<dCodigoYnombre> fuentes, LinkedList<dSintoma> sintomas){
-			this.nombreEnfermedad=nombreEnfermedad;
-			this.fuentes=fuentes;
-			this.sintomas=sintomas;
+	private static class DatosEnfermedad {
+		public final String diseasenombre;
+		public final Set<DatosFuente> sources;
+		public final Set<DatosSintomas> symptoms;
+
+		private DatosEnfermedad(String diseasenombre, Set<DatosFuente> sources,
+								Set<DatosSintomas> symptoms) {
+			this.diseasenombre = diseasenombre;
+			this.sources = sources;
+			this.symptoms = symptoms;
 		}
 
 
+		public static DatosEnfermedad codificar(String ent) {
+			String[] s = ent.split("=");
+			String prim = s[0];
+			String sintomas = s[1];
+
+			s = prim.split(":");
+			String diseasenombre = s[0];
+			String cods = s[1];
+			return new DatosEnfermedad(
+					diseasenombre,
+					Arrays.stream(cods.split(";")).map(DatosFuente::codificar).collect(Collectors.toSet()),
+					Arrays.stream(sintomas.split(";")).map(DatosSintomas::codificar).collect(Collectors.toSet())
+			);
+		}
 	}
+	
+	
+	private int realizarActualizacion(String query, Object... params) throws SQLException {
+		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+			for (int i = 0; i < params.length; i++) {
+				stmt.setObject(i + 1, params[i]);
+			}
+			return stmt.executeUpdate();
+		}
+	}
+	
+	private List<Object[]> realizarConsulta(String query, Object... params) throws SQLException {
+		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+			for (int i = 0; i < params.length; i++) {
+				stmt.setObject(i + 1, params[i]);
+			}
 
+			try (ResultSet set = stmt.executeQuery()) {
+				int ncols = set.getMetaData().getColumnCount();
+				List<Object[]> results = new LinkedList<>();
 
-	//Metodo auxiliar que limpia los elementos repetidos de la lista
-	private LinkedList<dSintoma> eraseRepeatedCodSintoma(LinkedList<dSintoma>list){
-		for(int i=0;i<list.size();i++){
-			for(int j=i+1;j<list.size();j++){
-				if(list.get(i).codSintoma.equals(list.get(j).codSintoma)){
-					list.remove(j);
+				while(set.next()) {
+					Object[] columns = new Object[ncols];
+					for (int i = 0; i < ncols; i++) {
+						columns[i] = set.getObject(i + 1);
+					}
+					results.add(columns);
 				}
+				return results;
 			}
 		}
-		return list;
 	}
 
-	private LinkedList<String> eraseRepeatedSemType(LinkedList<dSintoma>list){
-
-		LinkedList<String> a = new LinkedList<>();
-
-		for(int i = 0; i < list.size(); i++){
-			a.add(list.get(i).semType);
-		}
-		limpiar(a);
-		return a;
+	/* Metodo que devuelve el ultimo valor incrementado añadido en la base de datos */
+	private int ultimoIncrementado() throws SQLException {
+		return ((Number)realizarConsulta("SELECT LAST_INSERT_ID()").get(0)[0]).intValue();
 	}
-
-	private LinkedList<String> eraseRepeatedSourceCode(LinkedList<dCodigoYnombre>list){
-
-		LinkedList<String> a = new LinkedList<>();
-
-		for(int i = 0; i < list.size(); i++){
-			a.add(list.get(i).nombre);
-		}
-		limpiar(a);
-		return a;
-	}
-
-	private void limpiar(LinkedList<String>list){
-		Set<String> hs = new HashSet<>();
-		hs.addAll(list);
-		list.clear();
-		list.addAll(hs);		
-	}
-
 
 	private void showMenu() {
 
@@ -198,7 +224,7 @@ public class Diagnostico {
 
 			// Tabla disease:
 
-			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p = conn.prepareStatement("ALTER TABLE diagnostico.disease ENGINE = InnoDB;");
@@ -207,7 +233,7 @@ public class Diagnostico {
 
 
 			// Tabla symptom:
-			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
+			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, nombre VARCHAR(255) UNIQUE)";
 
 			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
@@ -216,16 +242,16 @@ public class Diagnostico {
 			p.close();	
 
 			// Tabla source
-			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(source);
 			p.executeUpdate();
 			p = conn.prepareStatement("ALTER TABLE diagnostico.source ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
-			// Tabla code
-			String code="CREATE TABLE diagnostico.code (code VARCHAR(255), source_id INT, " +
-					"PRIMARY KEY (code, source_id), " +
+			// Tabla codigo
+			String code="CREATE TABLE diagnostico.code (codigo VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (codigo, source_id), " +
 					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(code);
 			p.executeUpdate();
@@ -265,101 +291,64 @@ public class Diagnostico {
 
 
 
-			//Tabla disease_has_code
-			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
-					"PRIMARY KEY (disease_id, code, source_id), " +
+			//Tabla disease_has_codigo
+			String disease_has_codigo = "CREATE TABLE diagnostico.disease_has_codigo (disease_id INT, codigo VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (disease_id, codigo, source_id), " +
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
-					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
-					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = conn.prepareStatement(disease_has_code);
+					"FOREIGN KEY (codigo) REFERENCES codigo(codigo) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (source_id) REFERENCES codigo(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(disease_has_codigo);
 			p.executeUpdate();
-			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_has_code ENGINE = InnoDB;");
+			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_has_codigo ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
 
-			//Obtencion de los datos segun DATA
+			Set<DatosEnfermedad> diseases = readData().stream()
+					.map(DatosEnfermedad::codificar)
+					.collect(Collectors.toSet());
 
-			LinkedList<String>list = readData();
-			LinkedList<dEnfermedad>todasLasEnfermedades = new LinkedList<dEnfermedad>();
-			LinkedList<dCodigoYnombre>codigos= new LinkedList<dCodigoYnombre>();
-			LinkedList<dSintoma> sintomas= new LinkedList<dSintoma>();
-			for(int i=0; i<list.size();i++){
+			Map<String, Integer> knownSourceIds = new HashMap<>();
+			Map<String, Integer> knownSemanticTypes = new HashMap<>();
+			Set<String> knownSymptoms = new HashSet<>();
+			for (DatosEnfermedad disease1 : diseases) {
+				realizarActualizacion("INSERT INTO diagnostico.disease (nombre) VALUES (?)", disease1.diseasenombre);
+				int diseaseId = ultimoIncrementado();
 
-				String [] primeraSep = list.get(i).split("=");
-				String [] segundaSep=primeraSep[0].split(":");
-				String [] codVoc= segundaSep[1].split(";");
-				for(int j=0;j<codVoc.length;j++){
-					String[]datosCyV=codVoc[j].split("@");
-					dCodigoYnombre cod = new dCodigoYnombre(datosCyV[0], datosCyV[1]);
-					codigos.add(cod);
+				for (DatosFuente source1 : disease1.sources) {
+					Integer sourceId = knownSourceIds.get(source1.nombre);
+					if (sourceId == null) {
+						realizarActualizacion("INSERT INTO diagnostico.source (nombre) VALUES (?)", source1.nombre);
+						knownSourceIds.put(source1.nombre, sourceId = ultimoIncrementado());
+					}
+					realizarActualizacion("INSERT INTO diagnostico.code (codigo, source_id) VALUES (?, ?)", source1.codigo, sourceId);
+					realizarActualizacion("INSERT INTO diagnostico.disease_has_codigo VALUES (?, ?, ?)", diseaseId, source1.codigo, sourceId);
 				}
-				String [] parteDerecha=primeraSep[1].split(";");
-				for(int j=0;j<parteDerecha.length;j++){
-					String []datosSint=parteDerecha[j].split(":");
-					dSintoma sint= new dSintoma (datosSint[0],datosSint[1],datosSint[2]);
-					sintomas.add(sint);
+
+				for (DatosSintomas symptom1 : disease1.symptoms) {
+
+					boolean newSymptom = false;
+					if (knownSymptoms.add(symptom1.codigoSintoma)) {
+						newSymptom = true;
+						realizarActualizacion("INSERT INTO diagnostico.symptom VALUES (?, ?)", symptom1.codigoSintoma, symptom1.sintoma);
+					}
+
+					Integer semTypeId = knownSemanticTypes.get(symptom1.tipoSemantico);
+
+					if (semTypeId == null) {
+						realizarActualizacion("INSERT INTO diagnostico.semantic_type (cui) VALUES (?)", symptom1.tipoSemantico);
+						knownSemanticTypes.put(symptom1.tipoSemantico, semTypeId = ultimoIncrementado());
+					}
+
+					if (newSymptom) {
+						realizarActualizacion("INSERT INTO diagnostico.symptom_semantic_type VALUES (?, ?)", symptom1.codigoSintoma, semTypeId);
+					}
+					realizarActualizacion("INSERT INTO diagnostico.disease_symptom VALUES (?, ?)", diseaseId, symptom1.codigoSintoma);
 				}
-				dEnfermedad e=new dEnfermedad (segundaSep[0],codigos,sintomas);
-				todasLasEnfermedades.add(e);
 			}
+			//conn.commit();
 
-			//Introduccion de los datos en tablas
-
-			//tabla disease
-			String query2 = "INSERT INTO diagnostico.disease (name) VALUES (?);";
-			PreparedStatement pst2= conn.prepareStatement(query2);
-			for(int i=0; i<todasLasEnfermedades.size();i++){
-				pst2.setString(1, todasLasEnfermedades.get(i).nombreEnfermedad);
-				pst2.executeUpdate();
-			}
-
-			//tabla sintoma
-
-			String query3 ="INSERT INTO diagnostico.symptom (cui, name) VALUES (?,?)";
-			LinkedList<dSintoma> sinRepetidos=eraseRepeatedCodSintoma(sintomas);
-			PreparedStatement pst3 = conn.prepareStatement(query3);
-			for(int i = 0; i<sinRepetidos.size();i++){
-				pst3.setString(1, sinRepetidos.get(i).codSintoma);
-				pst3.setString(2, sinRepetidos.get(i).sintoma);
-				pst3.executeUpdate();
-			}
-
-			//tabla semantic_type
-			String query4 = "INSERT INTO diagnostico.semantic_type (cui) VALUES (?)";
-			LinkedList<String> sinRepetidos2 = eraseRepeatedSemType(sintomas);
-			PreparedStatement pst4=conn.prepareStatement(query4);
-			for(int i=0;i<sinRepetidos2.size();i++){
-				pst4.setString(1, sinRepetidos2.get(i));
-				pst4.executeUpdate();
-			}
-			//Tabla source
-			String query5= "INSERT INTO diagnostico.source (name) VALUES (?)";
-			LinkedList<String> sinRepetidos3 = eraseRepeatedSourceCode(codigos);
-			PreparedStatement pst5=conn.prepareStatement(query5);
-			for(int i=0; i<sinRepetidos3.size();i++){
-				pst5.setString(1, sinRepetidos3.get(i));
-				pst5.executeUpdate();
-			}
-
-			//Tabla symptom_semantic_type
-
-   			String query6 = "INSERT INTO diagnostico.symptom_semantic_type (semantic_type, cui) VALUES (?,?)";
-   			PreparedStatement pst6=conn.prepareStatement(query6);
-   			for(int i=0;i<sinRepetidos.size();i++){
-   			 	String id = "SELECT semantic_type.semantic_type_id FROM diagnostico.semantic_type WHERE cui= " + sinRepetidos.get(i).semType +";" ;
-    				Statement st = conn.createStatement();
-    				ResultSet rs = st.executeQuery(id);
-    				rs.first();
-    				pst6.setString(1, sinRepetidos.get(i).codSintoma);
-   				pst6.setInt(2, rs.getInt(1));
-    				pst6.executeUpdate();
-   			}
-
-
-
-
-
+			System.out.println("OperaciÃ³n finalizada");
 
 
 		}catch(SQLException ex) {
@@ -437,7 +426,7 @@ public class Diagnostico {
 
 	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
 		try {
-			String sintomas = "SELECT (Symptom.name) "
+			String sintomas = "SELECT (Symptom.nombre) "
 					+ "FROM Symptom;";
 			Statement st = conn.createStatement();
 			ResultSet rs = st.executeQuery(sintomas);
@@ -460,7 +449,7 @@ public class Diagnostico {
 		try {
 			conectar();
 
-			String nombre = "SELECT (disease.name) "
+			String nombre = "SELECT (disease.nombre) "
 					+ "FROM Disease;";
 			Statement st1 =  conn.createStatement();
 			ResultSet rs1 = st1.executeQuery(nombre);
@@ -484,7 +473,7 @@ public class Diagnostico {
 
 			while(rs3.next()) {
 				String comp = rs3.getString(1);
-				String cuicomp = "SELECT name " + "FROM Symptom " 
+				String cuicomp = "SELECT nombre " + "FROM Symptom " 
 						+ "WHERE cui= " + comp + ";";
 				Statement st4 = conn.createStatement();
 				ResultSet rs4 = st4.executeQuery(cuicomp);
@@ -509,25 +498,25 @@ public class Diagnostico {
 			while(rs.next()) {
 
 				String id1 = rs.getString(1);
-				String codeasociado   = "SELECT code " + "FROM Disease_has_code"
+				String codigoasociado   = "SELECT codigo " + "FROM Disease_has_codigo"
 						+ "WHERE id= " + id1 + ";";
 				Statement st1 = conn.createStatement();
-				ResultSet rs1 = st1.executeQuery(codeasociado); //codes asociados al id
+				ResultSet rs1 = st1.executeQuery(codigoasociado); //codigos asociados al id
 
-				String nombre   = "SELECT name " + "FROM Disease"
+				String nombre   = "SELECT nombre " + "FROM Disease"
 						+ "WHERE id= " + id1 + ";";
 				Statement st2 = conn.createStatement();
 				ResultSet rs2 = st2.executeQuery(nombre);
 
 				while(rs1.next()) {
-					String code1 = rs1.getString(1);
-					String sourceasociado   = "SELECT source_id " + "FROM Code"
-							+ "WHERE code= " + code1 + ";";
+					String codigo1 = rs1.getString(1);
+					String sourceasociado   = "SELECT source_id " + "FROM codigo"
+							+ "WHERE codigo= " + codigo1 + ";";
 					Statement st3 = conn.createStatement();
-					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un code
+					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un codigo
 
 					String sourceid = rs3.getString(1);
-					String nombresource = "SELECT name " + "FROM Source"
+					String nombresource = "SELECT nombre " + "FROM Source"
 							+ "WHERE source_id=" + sourceid + ";";
 					Statement st4 = conn.createStatement();
 					ResultSet rs4 = st4.executeQuery(nombresource);
@@ -552,7 +541,7 @@ public class Diagnostico {
 
 			while(rs1.next()) {
 
-				String nombre = "SELECT (symptom.name) "
+				String nombre = "SELECT (symptom.nombre) "
 						+ "FROM Symptom "+
 						"WHERE cui= "+cuisymp+	";";
 				Statement st =  conn.createStatement();
@@ -578,29 +567,29 @@ public class Diagnostico {
 			conectar();
 
 			String numEnfermedades= "SELECT (disease.disease_id)"
-					+ "FROM Disease;";
+					+ "FROM diagnostico.disease;";
 			Statement st = conn.createStatement();
 			ResultSet rs = st.executeQuery(numEnfermedades);//ids de enfermedades
 			while(rs.next()) {
 				int contador = 0;
 				String numero = rs.getString(1);
 				contador ++;
-				System.out.println("El numero de enfermedades es: "+ contador);
+				//System.out.println("El numero de enfermedades es: "+ contador);
 			}
 
 			String numSintomas= "SELECT (symptom.cui)"
-					+ "FROM Symptom;";
+					+ "FROM diagnostico.symptom;";
 			Statement st1 = conn.createStatement();
 			ResultSet rs1 = st1.executeQuery(numSintomas);//ids de sintomas
 			while(rs1.next()) {
 				int contador = 0;
 				String numero = rs1.getString(1);
 				contador++;
-				System.out.println("El numero de sintomas es: " + contador);
+				//System.out.println("El numero de sintomas es: " + contador);
 			}
 
 			String maxSympEnf= "SELECT (disease.disease_id) "
-					+ "FROM DiseaseSympton;";
+					+ "FROM diagnostico.disease_symptom;";
 			Statement st2 = conn.createStatement();
 			ResultSet rs2 = st2.executeQuery(maxSympEnf);//ids de enfermedades
 			while(rs2.next()) {
@@ -623,7 +612,7 @@ public class Diagnostico {
 
 				int idfinal = rs4.getInt(1);
 
-				String nombremaxENF = "SELECT (disase.name)"
+				String nombremaxENF = "SELECT (disase.nombre)"
 						+ "FROM Disease WHERE disease.id= "+ idfinal +";";
 				Statement st5 = conn.createStatement();
 				ResultSet rs5 = st5.executeQuery(nombremaxENF);
@@ -656,7 +645,7 @@ public class Diagnostico {
 
 				int idfinal1 = rs8.getInt(1);
 
-				String nombreminENF = "SELECT (disase.name)"
+				String nombreminENF = "SELECT (disase.nombre)"
 						+ "FROM Disease WHERE disease.id= "+ idfinal1 +";";
 				Statement st9 = conn.createStatement();
 				ResultSet rs9 = st9.executeQuery(nombreminENF);
