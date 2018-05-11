@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class Diagnostico {
 
-	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
+	private final String DATAFILE = "data/disease_data.data";
 	private Connection conn;
 
 	/* Antes de comenzar a la manipulacion de la base de datos, creamos
