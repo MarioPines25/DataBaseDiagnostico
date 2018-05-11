@@ -360,15 +360,33 @@ public class Diagnostico {
 		}
 
 	}
+		
+	private void listarSintomas(){
+		String todo = "SELECT (Symptom.name) "
+					+ "FROM diagnostico.symptom ORDER BY name ASC;";
+		Statement st;
+		try {
+			st = conn.createStatement();
+			ResultSet rs = st.executeQuery(todo);
+			while(rs.next()){
+				System.out.println("Sintoma: "+ rs.getObject(1));
+				System.out.println("\n");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	private void realizarDiagnostico() throws Exception{
 		int n = 0;
-		//listarSintomasCui();
-		ArrayList<String> sintomas = new ArrayList<>();
-		System.out.println("Ingrese cod_sintoma: ");
+		listarSintomas();
+		String s = "(symptom.name= ";
+		System.out.println("Ingrese sintoma: ");
 		boolean terminado = false;
 		while(!terminado){
 			String entrada = readString();
-			sintomas.add(entrada);
+			s+=entrada + ")";
 			System.out.print("Ingresar otro sintoma?[s/n]");
 			entrada = readString();
 
@@ -387,47 +405,34 @@ public class Diagnostico {
 			}
 			if(entrada.equals("n")) {
 				n++;
+				s+= ")";
 				terminado = true;
 				break;
 			}
 			else {
+				s += " AND (symptom.name= ";
 				n++;
-				terminado = true;
 			}	
 
 		}
 		System.out.println("Gracias, aquí tiene su diagnóstico");
-		String list = "";
+		
+		
+		String sintoma = "SELECT t1.name " +
+				"FROM diagnstico.disease as t1 " +
+				"INNER JOIN diagnostico.symptom AS t2 ON t1.disease_id = t2.disease_id " +
+				"WHERE " + s + ";";
 
-		if(n == 1){
-			list += "symptom.cui = "+ sintomas.get(0);
-			System.out.println(list);
+		Statement st =  conn.createStatement();
+		ResultSet rs = st.executeQuery(sintoma);
+		String enf=null;
+		while(rs.next()){
+			enf=rs.getString(1);
 		}
-		if (n == 2){
-			list += "symptom.cui = " + sintomas.get(0) + " AND ";
-			list += "symptom.cui = " + sintomas.get(1);
-			System.out.println(list);
-
-		}
-		if (n>2) {
-			for (int i = 0; i < n-1; i++ ) {
-				list += "symptom.cui = " + sintomas.get(i) + " AND ";
-			}
-			list += "symptom.cui = " + sintomas.get(n-1);
-			System.out.println(list);
-		}
-
-		String sintoma = "SELECT symptom.nombre"
-				+ "FROM Symptom"
-				+ "WHERE symptom.cui = " + list + ";";
-
-		//		Statement st =  conn.createStatement();
-		//		ResultSet rs = st.executeQuery(sintoma);
-		//		 while(rs.next()){
-		//			 System.out.println(rs.getObject(2));
-		//		 }
+		System.out.println(enf);
 
 	}
+
 	
 	/*Método listarSintomasCui():
 	
