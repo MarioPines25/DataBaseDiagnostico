@@ -1,5 +1,5 @@
-/*
-Actualización del 10/05:
+
+/*Actualización del 10/05:
 	-Se ha añadido el algoritmo de insertar datos: hay que hacer test
 	-Hay que revisar sentencias SQL de creación de tablas "You have an error in your SQL syntax; 
 	check the manual that corresponds to your MySQL server version for the right syntax to use near".
@@ -62,7 +62,7 @@ public class Diagnostico {
 		public final String tipoSemantico;
 
 		private DatosSintomas(String sintoma, String codigoSintoma,
-								String tipoSemantico) {
+				String tipoSemantico) {
 			this.sintoma = sintoma;
 			this.codigoSintoma = codigoSintoma;
 			this.tipoSemantico = tipoSemantico;
@@ -76,15 +76,15 @@ public class Diagnostico {
 
 
 	private static class DatosEnfermedad {
-		public final String diseasenombre;
-		public final Set<DatosFuente> sources;
-		public final Set<DatosSintomas> symptoms;
+		public final String nombreEnfermedad;
+		public final Set<DatosFuente> fuentes;
+		public final Set<DatosSintomas> sintomas;
 
-		private DatosEnfermedad(String diseasenombre, Set<DatosFuente> sources,
-								Set<DatosSintomas> symptoms) {
-			this.diseasenombre = diseasenombre;
-			this.sources = sources;
-			this.symptoms = symptoms;
+		private DatosEnfermedad(String nombreEnfermedad, Set<DatosFuente> fuentes,
+				Set<DatosSintomas> sintomas) {
+			this.nombreEnfermedad = nombreEnfermedad;
+			this.fuentes = fuentes;
+			this.sintomas = sintomas;
 		}
 
 
@@ -94,42 +94,42 @@ public class Diagnostico {
 			String sintomas = s[1];
 
 			s = prim.split(":");
-			String diseasenombre = s[0];
-			String cods = s[1];
+			String nombreEnf = s[0];
+			String codigos = s[1];
 			return new DatosEnfermedad(
-					diseasenombre,
-					Arrays.stream(cods.split(";")).map(DatosFuente::codificar).collect(Collectors.toSet()),
+					nombreEnf,
+					Arrays.stream(codigos.split(";")).map(DatosFuente::codificar).collect(Collectors.toSet()),
 					Arrays.stream(sintomas.split(";")).map(DatosSintomas::codificar).collect(Collectors.toSet())
-			);
+					);
 		}
 	}
-	
-	
-	private int realizarActualizacion(String query, Object... params) throws SQLException {
-		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+
+
+	private int realizarActualizacion(String consulta, Object... params) throws SQLException {
+		try (PreparedStatement st = conn.prepareStatement(consulta)) {
 			for (int i = 0; i < params.length; i++) {
-				stmt.setObject(i + 1, params[i]);
+				st.setObject(i + 1, params[i]);
 			}
-			return stmt.executeUpdate();
+			return st.executeUpdate();
 		}
 	}
-	
-	private List<Object[]> realizarConsulta(String query, Object... params) throws SQLException {
-		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+
+	private List<Object[]> realizarConsulta(String consulta, Object... params) throws SQLException {
+		try (PreparedStatement st = conn.prepareStatement(consulta)) {
 			for (int i = 0; i < params.length; i++) {
-				stmt.setObject(i + 1, params[i]);
+				st.setObject(i + 1, params[i]);
 			}
 
-			try (ResultSet set = stmt.executeQuery()) {
-				int ncols = set.getMetaData().getColumnCount();
+			try (ResultSet list = st.executeQuery()) {
+				int contCol = list.getMetaData().getColumnCount();
 				List<Object[]> results = new LinkedList<>();
 
-				while(set.next()) {
-					Object[] columns = new Object[ncols];
-					for (int i = 0; i < ncols; i++) {
-						columns[i] = set.getObject(i + 1);
+				while(list.next()) {
+					Object[] cols = new Object[contCol];
+					for (int i = 0; i < contCol; i++) {
+						cols[i] = list.getObject(i + 1);
 					}
-					results.add(columns);
+					results.add(cols);
 				}
 				return results;
 			}
@@ -145,14 +145,14 @@ public class Diagnostico {
 
 		int option = -1;
 		do {
-			System.out.println("Bienvenido a sistema de diagn�stico\n");
-			System.out.println("Selecciona una opci�n:\n");
-			System.out.println("\t1. Creaci�n de base de datos y carga de datos.");
-			System.out.println("\t2. Realizar diagn�stico.");
-			System.out.println("\t3. Listar s�ntomas de una enfermedad.");
-			System.out.println("\t4. Listar enfermedades y sus c�digos asociados.");
-			System.out.println("\t5. Listar s�ntomas existentes en la BD y su tipo sem�ntico.");
-			System.out.println("\t6. Mostrar estad�sticas de la base de datos.");
+			System.out.println("Bienvenido a sistema de diagn?stico\n");
+			System.out.println("Selecciona una opci?n:\n");
+			System.out.println("\t1. Creaci?n de base de datos y carga de datos.");
+			System.out.println("\t2. Realizar diagn?stico.");
+			System.out.println("\t3. Listar s?ntomas de una enfermedad.");
+			System.out.println("\t4. Listar enfermedades y sus c?digos asociados.");
+			System.out.println("\t5. Listar s?ntomas existentes en la BD y su tipo sem?ntico.");
+			System.out.println("\t6. Mostrar estad?sticas de la base de datos.");
 			System.out.println("\t7. Salir.");
 			try {
 				option = readInt();
@@ -180,14 +180,14 @@ public class Diagnostico {
 					break;
 				}
 			} catch (Exception e) {
-				System.err.println("Opci�n introducida no v�lida!");
+				System.err.println("Opci?n introducida no v?lida!");
 			}
 		} while (option != 7);
 		exit();
 	}
 
 	private void exit() {
-		System.out.println("Saliendo.. �hasta otra!");
+		System.out.println("Saliendo.. ?hasta otra!");
 		System.exit(0);
 	}
 
@@ -224,7 +224,7 @@ public class Diagnostico {
 
 			// Tabla disease:
 
-			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(255) UNIQUE)";
+			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p = conn.prepareStatement("ALTER TABLE diagnostico.disease ENGINE = InnoDB;");
@@ -233,7 +233,7 @@ public class Diagnostico {
 
 
 			// Tabla symptom:
-			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, nombre VARCHAR(255) UNIQUE)";
+			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
 
 			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
@@ -242,7 +242,7 @@ public class Diagnostico {
 			p.close();	
 
 			// Tabla source
-			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(255) UNIQUE)";
+			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(source);
 			p.executeUpdate();
 			p = conn.prepareStatement("ALTER TABLE diagnostico.source ENGINE = InnoDB;");
@@ -250,8 +250,8 @@ public class Diagnostico {
 			p.close();	
 
 			// Tabla codigo
-			String code="CREATE TABLE diagnostico.code (codigo VARCHAR(255), source_id INT, " +
-					"PRIMARY KEY (codigo, source_id), " +
+			String code="CREATE TABLE diagnostico.code (code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (code, source_id), " +
 					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(code);
 			p.executeUpdate();
@@ -292,14 +292,14 @@ public class Diagnostico {
 
 
 			//Tabla disease_has_codigo
-			String disease_has_codigo = "CREATE TABLE diagnostico.disease_has_codigo (disease_id INT, codigo VARCHAR(255), source_id INT, " +
-					"PRIMARY KEY (disease_id, codigo, source_id), " +
+			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (disease_id, code, source_id), " +
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
-					"FOREIGN KEY (codigo) REFERENCES codigo(codigo) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
-					"FOREIGN KEY (source_id) REFERENCES codigo(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
-			p = conn.prepareStatement(disease_has_codigo);
+					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(disease_has_code);
 			p.executeUpdate();
-			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_has_codigo ENGINE = InnoDB;");
+			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_has_code ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
@@ -308,42 +308,42 @@ public class Diagnostico {
 					.map(DatosEnfermedad::codificar)
 					.collect(Collectors.toSet());
 
-			Map<String, Integer> knownSourceIds = new HashMap<>();
-			Map<String, Integer> knownSemanticTypes = new HashMap<>();
-			Set<String> knownSymptoms = new HashSet<>();
+			Map<String, Integer> idFuente = new HashMap<>();
+			Map<String, Integer> tiposSemanticos = new HashMap<>();
+			Set<String> sintomasCn = new HashSet<>();
 			for (DatosEnfermedad disease1 : diseases) {
-				realizarActualizacion("INSERT INTO diagnostico.disease (nombre) VALUES (?)", disease1.diseasenombre);
-				int diseaseId = ultimoIncrementado();
+				realizarActualizacion("INSERT INTO diagnostico.disease (name) VALUES (?)", disease1.nombreEnfermedad);
+				int incrementado = ultimoIncrementado();
 
-				for (DatosFuente source1 : disease1.sources) {
-					Integer sourceId = knownSourceIds.get(source1.nombre);
-					if (sourceId == null) {
-						realizarActualizacion("INSERT INTO diagnostico.source (nombre) VALUES (?)", source1.nombre);
-						knownSourceIds.put(source1.nombre, sourceId = ultimoIncrementado());
+				for (DatosFuente source1 : disease1.fuentes) {
+					Integer fuente = idFuente.get(source1.nombre);
+					if (fuente == null) {
+						realizarActualizacion("INSERT INTO diagnostico.source (name) VALUES (?)", source1.nombre);
+						idFuente.put(source1.nombre, fuente = ultimoIncrementado());
 					}
-					realizarActualizacion("INSERT INTO diagnostico.code (codigo, source_id) VALUES (?, ?)", source1.codigo, sourceId);
-					realizarActualizacion("INSERT INTO diagnostico.disease_has_codigo VALUES (?, ?, ?)", diseaseId, source1.codigo, sourceId);
+					realizarActualizacion("INSERT INTO diagnostico.code (code, source_id) VALUES (?, ?)", source1.codigo, fuente);
+					realizarActualizacion("INSERT INTO diagnostico.disease_has_code VALUES (?, ?, ?)", incrementado, source1.codigo, fuente);
 				}
 
-				for (DatosSintomas symptom1 : disease1.symptoms) {
+				for (DatosSintomas symptom1 : disease1.sintomas) {
 
-					boolean newSymptom = false;
-					if (knownSymptoms.add(symptom1.codigoSintoma)) {
-						newSymptom = true;
+					boolean sintomaNew = false;
+					if (sintomasCn.add(symptom1.codigoSintoma)) {
+						sintomaNew = true;
 						realizarActualizacion("INSERT INTO diagnostico.symptom VALUES (?, ?)", symptom1.codigoSintoma, symptom1.sintoma);
 					}
 
-					Integer semTypeId = knownSemanticTypes.get(symptom1.tipoSemantico);
+					Integer tipoSemanticoInt = tiposSemanticos.get(symptom1.tipoSemantico);
 
-					if (semTypeId == null) {
+					if (tipoSemanticoInt == null) {
 						realizarActualizacion("INSERT INTO diagnostico.semantic_type (cui) VALUES (?)", symptom1.tipoSemantico);
-						knownSemanticTypes.put(symptom1.tipoSemantico, semTypeId = ultimoIncrementado());
+						tiposSemanticos.put(symptom1.tipoSemantico, tipoSemanticoInt = ultimoIncrementado());
 					}
 
-					if (newSymptom) {
-						realizarActualizacion("INSERT INTO diagnostico.symptom_semantic_type VALUES (?, ?)", symptom1.codigoSintoma, semTypeId);
+					if (sintomaNew) {
+						realizarActualizacion("INSERT INTO diagnostico.symptom_semantic_type VALUES (?, ?)", symptom1.codigoSintoma, tipoSemanticoInt);
 					}
-					realizarActualizacion("INSERT INTO diagnostico.disease_symptom VALUES (?, ?)", diseaseId, symptom1.codigoSintoma);
+					realizarActualizacion("INSERT INTO diagnostico.disease_symptom VALUES (?, ?)", incrementado, symptom1.codigoSintoma);
 				}
 			}
 			//conn.commit();
@@ -361,7 +361,8 @@ public class Diagnostico {
 		//listarSintomasCui();
 		ArrayList<String> sintomas = new ArrayList<>();
 		System.out.println("Ingrese cod_sintoma: ");
-		for(int i = 0; i < 6; i++) {
+		boolean terminado = false;
+		while(!terminado){
 			String entrada = readString();
 			sintomas.add(entrada);
 			System.out.print("Ingresar otro sintoma?[s/n]");
@@ -379,15 +380,15 @@ public class Diagnostico {
 						correcto = true;
 				}
 
-				i--;
-
 			}
 			if(entrada.equals("n")) {
 				n++;
+				terminado = true;
 				break;
 			}
 			else {
 				n++;
+				terminado = true;
 			}	
 
 		}
@@ -449,13 +450,13 @@ public class Diagnostico {
 		try {
 			conectar();
 
-			String nombre = "SELECT (disease.nombre) "
-					+ "FROM Disease;";
+			String nombre = "SELECT (disease.name) "
+					+ "FROM diagnostico.disease;";
 			Statement st1 =  conn.createStatement();
 			ResultSet rs1 = st1.executeQuery(nombre);
 
 			String id = "SELECT (disease.disease_id) "
-					+ "FROM Disease;";
+					+ "FROM diagnostico.disease;";
 			Statement st2 = conn.createStatement();
 			ResultSet rs2 = st2.executeQuery(id);
 
@@ -466,21 +467,15 @@ public class Diagnostico {
 			System.out.println("Ingrese el ID de la enfermedad");
 			int entrada = readInt();
 
-			String cui = "SELECT cui " + "FROM disease_symptom "
-					+ "WHERE disease_id= " + entrada + ";";
-			PreparedStatement st3 = conn.prepareStatement(cui);
-			ResultSet rs3 = st3.executeQuery(cui);
-
-			while(rs3.next()) {
-				String comp = rs3.getString(1);
-				String cuicomp = "SELECT nombre " + "FROM Symptom " 
-						+ "WHERE cui= " + comp + ";";
-				Statement st4 = conn.createStatement();
-				ResultSet rs4 = st4.executeQuery(cuicomp);
-				if(rs4.next()) {
-					System.out.println(rs4.getObject(1));
-				}	
+			String todo = "SELECT * FROM diagnostico.symptom "+	
+					"INNER JOIN disease_symptom ON symptom.cui = disease_symptom.cui "+
+					"WHERE disease_id= "+ entrada +";";
+			Statement st3 = conn.createStatement();
+			ResultSet rs3 = st3.executeQuery(todo);
+			while(rs3.next()){
+				System.out.println(rs3.getObject(1));
 			}
+
 		} catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
@@ -490,39 +485,16 @@ public class Diagnostico {
 		try {
 			conectar();
 
-			String id = "SELECT (disease.disease_id) "
-					+ "FROM Disease;";
-			Statement st =  conn.createStatement();
-			ResultSet rs = st.executeQuery(id);
-
-			while(rs.next()) {
-
-				String id1 = rs.getString(1);
-				String codigoasociado   = "SELECT codigo " + "FROM Disease_has_codigo"
-						+ "WHERE id= " + id1 + ";";
-				Statement st1 = conn.createStatement();
-				ResultSet rs1 = st1.executeQuery(codigoasociado); //codigos asociados al id
-
-				String nombre   = "SELECT nombre " + "FROM Disease"
-						+ "WHERE id= " + id1 + ";";
-				Statement st2 = conn.createStatement();
-				ResultSet rs2 = st2.executeQuery(nombre);
-
-				while(rs1.next()) {
-					String codigo1 = rs1.getString(1);
-					String sourceasociado   = "SELECT source_id " + "FROM codigo"
-							+ "WHERE codigo= " + codigo1 + ";";
-					Statement st3 = conn.createStatement();
-					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un codigo
-
-					String sourceid = rs3.getString(1);
-					String nombresource = "SELECT nombre " + "FROM Source"
-							+ "WHERE source_id=" + sourceid + ";";
-					Statement st4 = conn.createStatement();
-					ResultSet rs4 = st4.executeQuery(nombresource);
-
-					System.out.println(rs2.getObject(1) + "/" + rs1.getObject(1) + "," + rs4.getObject(1));
-				}
+			String todo=
+					"SELECT CONCAT(t2.name, '. CÃ³digos:', '\n  - ', GROUP_CONCAT(CONCAT(code, ' (de ', t3.name, ')') SEPARATOR '\n  - '), '\n') " +
+							"FROM disease_has_code as t1 " +
+							"INNER JOIN disease as t2 ON t1.disease_id = t1.disease_id " +
+							"INNER JOIN source as t3 ON t1.source_id = t3.source_id " +
+							"GROUP BY t1.disease_id;";
+			Statement st3 = conn.createStatement();
+			ResultSet rs3 = st3.executeQuery(todo);
+			while(rs3.next()){
+				System.out.println(rs3.getObject(1));
 			}
 		} catch (SQLException ex) {
 			System.err.println(ex);
@@ -533,31 +505,22 @@ public class Diagnostico {
 	private void listarSintomasYTiposSemanticos() throws Exception { 
 		try {
 			conectar();
+			String todo = "SELECT t1.cui, t2.name, t3.cui " +
+					"FROM symptom_semantic_type AS t1 " +
+					"INNER JOIN symptom AS t2 ON t1.cui = t2.cui " +
+					"INNER JOIN semantic_type AS t3 ON t1.semantic_type_id = t3.semantic_type_id " +
+					"ORDER BY t2.name ASC;";
 
-			String cuisymp = "SELECT (symptom.cui) "
-					+ "FROM Symptom;";
-			Statement st1 =  conn.createStatement();
-			ResultSet rs1 = st1.executeQuery(cuisymp); //ids de los sintomas
-
-			while(rs1.next()) {
-
-				String nombre = "SELECT (symptom.nombre) "
-						+ "FROM Symptom "+
-						"WHERE cui= "+cuisymp+	";";
-				Statement st =  conn.createStatement();
-				ResultSet rs = st.executeQuery(nombre);//nombre sintomas asociado a id
-
-				String cui1 = rs1.getString(1);
-				String semanticasociado = "SELECT (symptom_semantic_type.semantic_type_id) "
-						+ "FROM SymptomSemanticType "
-						+ "WHERE cui= " +cui1+";";
-				Statement st2 =  conn.createStatement();
-				ResultSet rs2 = st2.executeQuery(semanticasociado); //semantics asociados a un cui
-
-				System.out.println("Sintoma: " + rs.getObject(1) + " , Tipo Semantico: " + rs2.getObject(1) );
+			Statement st3 = conn.createStatement();
+			ResultSet rs3 = st3.executeQuery(todo);
+			while(rs3.next()){
+				System.out.println("Codigo--> "+ rs3.getObject(1) + " || Sintoma--> " + 
+						rs3.getObject(2) + 
+						" || TipoSemantico--> " + rs3.getObject(3));
+				System.out.println("\n");
 			}
-
-		} catch (SQLException ex) {
+		} 
+		catch (SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
@@ -700,11 +663,11 @@ public class Diagnostico {
 	}
 
 	/**
-	 * M�todo para leer n�meros enteros de teclado.
+	 * M?todo para leer n?meros enteros de teclado.
 	 * 
-	 * @return Devuelve el n�mero le�do.
+	 * @return Devuelve el n?mero le?do.
 	 * @throws Exception
-	 *             Puede lanzar excepci�n.
+	 *             Puede lanzar excepci?n.
 	 */
 	private int readInt() throws Exception {
 		try {
@@ -716,11 +679,11 @@ public class Diagnostico {
 	}
 
 	/**
-	 * M�todo para leer cadenas de teclado.
+	 * M?todo para leer cadenas de teclado.
 	 * 
-	 * @return Devuelve la cadena le�da.
+	 * @return Devuelve la cadena le?da.
 	 * @throws Exception
-	 *             Puede lanzar excepci�n.
+	 *             Puede lanzar excepci?n.
 	 */
 	private String readString() throws Exception {
 		try {
@@ -732,11 +695,11 @@ public class Diagnostico {
 	}
 
 	/**
-	 * M�todo para leer el fichero que contiene los datos.
+	 * M?todo para leer el fichero que contiene los datos.
 	 * 
 	 * @return Devuelve una lista de String con el contenido.
 	 * @throws Exception
-	 *             Puede lanzar excepci�n.
+	 *             Puede lanzar excepci?n.
 	 */
 	private LinkedList<String> readData() throws Exception {
 		LinkedList<String> data = new LinkedList<String>();
