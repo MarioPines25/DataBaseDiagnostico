@@ -201,6 +201,8 @@ public class Diagnostico {
 			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(disease);
 			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.disease ENGINE = InnoDB;");
+			p.executeUpdate();
 			p.close();	
 
 
@@ -209,11 +211,15 @@ public class Diagnostico {
 
 			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.symptom ENGINE = InnoDB;");
+			p.executeUpdate();
 			p.close();	
 
 			// Tabla source
 			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
 			p = conn.prepareStatement(source);
+			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.source ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
@@ -223,11 +229,15 @@ public class Diagnostico {
 					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(code);
 			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.code ENGINE = InnoDB;");
+			p.executeUpdate();
 			p.close();	
 
 			// Tabla semantic_type
 			String semantic_type = "CREATE TABLE diagnostico.semantic_type (semantic_type_id INT PRIMARY KEY AUTO_INCREMENT,cui VARCHAR(45) UNIQUE)";
 			p = conn.prepareStatement(semantic_type);
+			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.semantic_type ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
@@ -238,6 +248,8 @@ public class Diagnostico {
 					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(symptom_semantic_type);
 			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.symptom_semantic_type ENGINE = InnoDB;");
+			p.executeUpdate();
 			p.close();	
 
 			// Tabla disease_symptom
@@ -246,6 +258,8 @@ public class Diagnostico {
 					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
 					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(disease_symptom);
+			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_symptom ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
@@ -258,6 +272,8 @@ public class Diagnostico {
 					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
 					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
 			p = conn.prepareStatement(disease_has_code);
+			p.executeUpdate();
+			p = conn.prepareStatement("ALTER TABLE diagnostico.disease_has_code ENGINE = InnoDB;");
 			p.executeUpdate();
 			p.close();	
 
@@ -318,13 +334,24 @@ public class Diagnostico {
 				pst4.executeUpdate();
 			}
 			//Tabla source
-		      String query5= "INSERT INTO diagnostico.source (name) VALUES (?)";
-		      LinkedList<String> sinRepetidos3 = eraseRepeatedSourceCode(codigos);
-		      PreparedStatement pst5=conn.prepareStatement(query5);
-		      for(int i=0; i<sinRepetidos3.size();i++){
-		       pst5.setString(1, sinRepetidos3.get(i));
-		       pst5.executeUpdate();
-		      }
+			String query5= "INSERT INTO diagnostico.source (name) VALUES (?)";
+			LinkedList<String> sinRepetidos3 = eraseRepeatedSourceCode(codigos);
+			PreparedStatement pst5=conn.prepareStatement(query5);
+			for(int i=0; i<sinRepetidos3.size();i++){
+				pst5.setString(1, sinRepetidos3.get(i));
+				pst5.executeUpdate();
+			}
+
+			//Tabla symptom_semantic_type
+
+
+			String query6 = "INSERT INTO diagnostico.symptom_semantic_type (cui) VALUES (?)";
+			PreparedStatement pst6=conn.prepareStatement(query6);
+			for(int i=0;i<sinRepetidos.size();i++){
+				pst6.setString(1, sinRepetidos.get(i).codSintoma);
+				pst6.executeUpdate();
+			}
+
 
 
 
