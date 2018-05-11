@@ -1,9 +1,4 @@
-
-/*Actualización del 10/05:
-	-Se ha añadido el algoritmo de insertar datos: hay que hacer test
-	-Hay que revisar sentencias SQL de creación de tablas "You have an error in your SQL syntax; 
-	check the manual that corresponds to your MySQL server version for the right syntax to use near".
- */
+package practica1;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.sql.*;
-import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -26,7 +20,7 @@ public class Diagnostico {
 
 	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
 	private Connection conn;
-	private Statement st;
+	//private Statement st;
 
 	/* Antes de comenzar a la manipulacion de la base de datos, creamos
 	 * las estructuras de datos necesarias, para despues obtener cada uno 
@@ -202,7 +196,7 @@ public class Diagnostico {
 		String pass = "bddx_pwd";
 		String url= "jdbc:mysql://"+ serverAddress+"/";
 		conn = DriverManager.getConnection(url, user, pass);
-		conn.setCatalog("diagnostico");
+		conn.setCatalog(db);
 		System.out.println("Conectado a la base de datos!");
 
 	}
@@ -219,9 +213,10 @@ public class Diagnostico {
 			pst.executeUpdate();
 			PreparedStatement ps = conn.prepareStatement("CREATE DATABASE diagnostico;");
 			ps.executeUpdate();
-
-			//CREACION DE TABLAS
-
+			
+			System.out.println("\n");
+			System.out.println("... Creando Tablas ...");
+			System.out.println("\n");
 			// Tabla disease:
 
 			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
@@ -303,6 +298,8 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
+			
+			System.out.println("... Insertando datos ...");
 
 			Set<DatosEnfermedad> diseases = readData().stream()
 					.map(DatosEnfermedad::codificar)
@@ -346,9 +343,10 @@ public class Diagnostico {
 					realizarActualizacion("INSERT INTO diagnostico.disease_symptom VALUES (?, ?)", incrementado, symptom1.codigoSintoma);
 				}
 			}
-			//conn.commit();
-
-			System.out.println("OperaciÃ³n finalizada");
+			
+			System.out.println("\n");
+			System.out.println("Base de datos creada, datos introducidos");
+			System.out.println("\n");
 
 
 		}catch(SQLException ex) {
