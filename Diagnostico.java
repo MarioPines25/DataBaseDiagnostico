@@ -97,6 +97,9 @@ public class Diagnostico {
 					);
 		}
 	}
+	/*Método realizarActualizacion():
+		-
+	*/
 
 
 	private int realizarActualizacion(String consulta, Object... params) throws SQLException {
@@ -208,6 +211,9 @@ public class Diagnostico {
 			if(conn==null) {
 				conectar();
 			}
+			
+			Connection com = conn;
+			com.setAutoCommit(false);
 
 			PreparedStatement pst = conn.prepareStatement("DROP DATABASE diagnostico;");
 			pst.executeUpdate();
@@ -343,7 +349,7 @@ public class Diagnostico {
 					realizarActualizacion("INSERT INTO diagnostico.disease_symptom VALUES (?, ?)", incrementado, symptom1.codigoSintoma);
 				}
 			}
-			
+			com.commit();
 			System.out.println("\n");
 			System.out.println("Base de datos creada, datos introducidos");
 			System.out.println("\n");
@@ -422,7 +428,10 @@ public class Diagnostico {
 		//		 }
 
 	}
-
+	
+	/*Método listarSintomasCui():
+	
+	*/
 	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
 		try {
 			String sintomas = "SELECT (Symptom.nombre) "
@@ -443,7 +452,15 @@ public class Diagnostico {
 			System.err.println(ex.getMessage());
 		}
 	}
-
+	
+	/*
+	Método listarSintomasEnfermedad: 
+		-Método que sirve para, dada una enfermedad introducida
+		por el usuario, muestre los síntomas asociados a dicha enfermedad.
+		-Primeramente muestra las enfermedades con sus ID´s asociados.
+		-El usuario debe introducir el ID de la enfermedad deseada.
+		-Se muestran los síntomas asociados a la enfermedad.
+	*/
 	private void listarSintomasEnfermedad() throws Exception {
 		try {
 			conectar();
@@ -479,6 +496,12 @@ public class Diagnostico {
 		}
 	}
 
+	/*Método listarEnfermedadesYCodigosAsociados():
+		-Método que muestra una lista de enfermedades con sus con sus códigos
+		asociados de la tabla Source.
+		-Se crea un Statement que muestra la lista con la información deseada.
+	*/
+	
 	private void listarEnfermedadesYCodigosAsociados() throws Exception {
 		try {
 			conectar();
@@ -499,7 +522,10 @@ public class Diagnostico {
 		}
 
 	}
-
+	
+	/*Método listarSintomasYTiposSemanticos():
+		-Muestra una lista con los sintomas y los tipos semanticos asociados.
+	*/
 	private void listarSintomasYTiposSemanticos() throws Exception { 
 		try {
 			conectar();
