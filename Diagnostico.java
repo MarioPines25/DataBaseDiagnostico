@@ -20,7 +20,6 @@ public class Diagnostico {
 
 	private final String DATAFILE = "C:/Users/MV_w7/Desktop/disease_data.data";
 	private Connection conn;
-	//private Statement st;
 
 	/* Antes de comenzar a la manipulacion de la base de datos, creamos
 	 * las estructuras de datos necesarias, para despues obtener cada uno 
@@ -198,6 +197,7 @@ public class Diagnostico {
 			System.out.println("\n");
 			System.out.println("... Creando Tablas ...");
 			System.out.println("\n");
+			
 			// Tabla disease:
 
 			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
@@ -282,6 +282,13 @@ public class Diagnostico {
 
 			System.out.println("... Insertando datos ...");
 
+			/* Para la insercion de los datos hemos creado las estructuras necesarias para:
+			 * - No repetir fuentes
+			 * - No repetir tipos semanticos
+			 * - No repetir sintomas
+			 *  Una vez creadas estas estructuras. Tomando el archivo de entrada hemos ido añadiendo
+			 *  los datos a sus correspondientes tablas. */
+			
 			Set<DatosEnfermedad> diseases = readData().stream()
 					.map(DatosEnfermedad::codificar)
 					.collect(Collectors.toSet());
@@ -393,13 +400,13 @@ public class Diagnostico {
 	}	
 
 	/*
-	Método listarSintomasEnfermedad: 
+	Método listarSintomasEnfermedad(): 
 		-Método que sirve para, dada una enfermedad introducida
 		por el usuario, muestre los síntomas asociados a dicha enfermedad.
 		-Primeramente muestra las enfermedades con sus ID´s asociados.
 		-El usuario debe introducir el ID de la enfermedad deseada.
 		-Se muestran los síntomas asociados a la enfermedad.
-	 */
+	*/
 	private void listarSintomasEnfermedad() throws Exception {
 		try {
 			conectar();
@@ -488,6 +495,18 @@ public class Diagnostico {
 		}
 	}
 
+	/* Metodo mostrarEstadisticasBD()
+	 * Como indica el guion del proyecto, el metodo devuelve un resumen del estado 
+	 * de la base de datos. El estado contiene:
+	 * 
+	 * - Numero total de enfermedades
+	 * - Numero total de sintomas
+	 * - Enfermedad con mas sintomas y nº de sintomas
+	 * - Enfermedad con menos sintomas y nº de sintomas
+	 * - Numero medio de sintomas
+	 * - Numero de codigos semanticos y tipos asociados 
+	 *  */
+	
 	private void mostrarEstadisticasBD() throws Exception {
 		try {
 			conectar();
@@ -636,8 +655,9 @@ public class Diagnostico {
 	}
 	
 	/*Método realizarActualizacion():
-	-
- */
+		Dada una consulta, el metodo actualiza el estado de una tabla de la base de datos a traves
+		de una query y una lista de parametros.
+	*/
 	
 	private int realizarActualizacion(String consulta, Object... params) throws SQLException {
 		try (PreparedStatement st = conn.prepareStatement(consulta)) {
@@ -647,6 +667,10 @@ public class Diagnostico {
 			return st.executeUpdate();
 		}
 	}
+	
+	/* Metodo realizarConsulta()
+	 * 	Realiza la accion equivalente a una executeQuery tomando los datos
+	 * de las columnas */
 
 	private List<Object[]> realizarConsulta(String consulta, Object... params) throws SQLException {
 		try (PreparedStatement st = conn.prepareStatement(consulta)) {
@@ -670,11 +694,17 @@ public class Diagnostico {
 		}
 	}
 
-	/* Metodo que devuelve el ultimo valor incrementado añadido en la base de datos */
+	/* metodo ultimoIncrementado():
+	 * 	Para facilitar la insercion de los datos en la base, el metodo devuelve el ultimo 
+	 * valor incrementado. */
 	private int ultimoIncrementado() throws SQLException {
 		return ((Number)realizarConsulta("SELECT LAST_INSERT_ID()").get(0)[0]).intValue();
 	}
 	
+	
+	/* metodo listarSintomas():
+	 * Este metodo lista de los sintomas que se utilizaran despues para indicar
+	 * la enfermedad con estos sintomas  */	
 	private void listarSintomas(){
 		String todo = "SELECT (Symptom.name) "
 				+ "FROM diagnostico.symptom ORDER BY name ASC;";
