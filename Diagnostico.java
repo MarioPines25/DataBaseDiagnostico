@@ -1,4 +1,4 @@
-package practica1;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,46 +97,10 @@ public class Diagnostico {
 					);
 		}
 	}
-	/*Método realizarActualizacion():
-		-
-	*/
+	
 
 
-	private int realizarActualizacion(String consulta, Object... params) throws SQLException {
-		try (PreparedStatement st = conn.prepareStatement(consulta)) {
-			for (int i = 0; i < params.length; i++) {
-				st.setObject(i + 1, params[i]);
-			}
-			return st.executeUpdate();
-		}
-	}
-
-	private List<Object[]> realizarConsulta(String consulta, Object... params) throws SQLException {
-		try (PreparedStatement st = conn.prepareStatement(consulta)) {
-			for (int i = 0; i < params.length; i++) {
-				st.setObject(i + 1, params[i]);
-			}
-
-			try (ResultSet list = st.executeQuery()) {
-				int contCol = list.getMetaData().getColumnCount();
-				List<Object[]> results = new LinkedList<>();
-
-				while(list.next()) {
-					Object[] cols = new Object[contCol];
-					for (int i = 0; i < contCol; i++) {
-						cols[i] = list.getObject(i + 1);
-					}
-					results.add(cols);
-				}
-				return results;
-			}
-		}
-	}
-
-	/* Metodo que devuelve el ultimo valor incrementado añadido en la base de datos */
-	private int ultimoIncrementado() throws SQLException {
-		return ((Number)realizarConsulta("SELECT LAST_INSERT_ID()").get(0)[0]).intValue();
-	}
+	
 
 	private void showMenu() {
 
@@ -182,12 +146,7 @@ public class Diagnostico {
 		} while (option != 7);
 		exit();
 	}
-
-	private void exit() {
-		System.out.println("Saliendo.. ?hasta otra!");
-		System.exit(0);
-	}
-
+	
 	private void conectar() throws Exception {
 		// implementar
 		String drv="com.mysql.jdbc.Driver";
@@ -203,6 +162,22 @@ public class Diagnostico {
 		System.out.println("Conectado a la base de datos!");
 
 	}
+	
+	private void desconectar() {
+		if (conn != null) {
+			try {
+				conn.close();
+			} catch (SQLException e) {
+			}
+		}
+	}
+
+	private void exit() {
+		System.out.println("Saliendo.. ?hasta otra!");
+		desconectar();
+		System.exit(0);
+	}
+
 
 	private void crearBD() throws Exception{
 		String s;
@@ -211,7 +186,7 @@ public class Diagnostico {
 			if(conn==null) {
 				conectar();
 			}
-			
+
 			Connection com = conn;
 			com.setAutoCommit(false);
 
@@ -219,7 +194,7 @@ public class Diagnostico {
 			pst.executeUpdate();
 			PreparedStatement ps = conn.prepareStatement("CREATE DATABASE diagnostico;");
 			ps.executeUpdate();
-			
+
 			System.out.println("\n");
 			System.out.println("... Creando Tablas ...");
 			System.out.println("\n");
@@ -304,7 +279,7 @@ public class Diagnostico {
 			p.executeUpdate();
 			p.close();	
 
-			
+
 			System.out.println("... Insertando datos ...");
 
 			Set<DatosEnfermedad> diseases = readData().stream()
@@ -360,22 +335,6 @@ public class Diagnostico {
 		}
 
 	}
-		
-	private void listarSintomas(){
-		String todo = "SELECT (Symptom.name) "
-					+ "FROM diagnostico.symptom ORDER BY name ASC;";
-		Statement st;
-		try {
-			st = conn.createStatement();
-			ResultSet rs = st.executeQuery(todo);
-			while(rs.next()){
-				System.out.println("Sintoma: "+ rs.getObject(1));
-				System.out.println("\n");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
 
 
 	private void realizarDiagnostico() throws Exception{
@@ -416,8 +375,8 @@ public class Diagnostico {
 
 		}
 		System.out.println("Gracias, aquí tiene su diagnóstico");
-		
-		
+
+
 		String sintoma = "SELECT t1.name " +
 				"FROM diagnstico.disease as t1 " +
 				"INNER JOIN diagnostico.symptom AS t2 ON t1.disease_id = t2.disease_id " +
@@ -431,33 +390,8 @@ public class Diagnostico {
 		}
 		System.out.println(enf);
 
-	}
+	}	
 
-	
-	/*Método listarSintomasCui():
-	
-	*/
-	private void listarSintomasCui() { //metodo auxiliar para poder listar los sintomas y sus codigos (uso en realizarDiagnostico())
-		try {
-			String sintomas = "SELECT (Symptom.nombre) "
-					+ "FROM Symptom;";
-			Statement st = conn.createStatement();
-			ResultSet rs = st.executeQuery(sintomas);
-
-			String codSintomas = "SELECT (Symptom.cui) "
-					+ "FROM Symptom;";
-			Statement st1 = conn.createStatement();
-			ResultSet rs1 = st1.executeQuery(codSintomas);
-
-			while(rs.next() && rs1.next()) {
-				System.out.println("Sintoma: " + rs.getObject(1) + " , Codigo: " + rs1.getObject(1));	
-			}
-
-		} catch (SQLException ex) {
-			System.err.println(ex.getMessage());
-		}
-	}
-	
 	/*
 	Método listarSintomasEnfermedad: 
 		-Método que sirve para, dada una enfermedad introducida
@@ -465,7 +399,7 @@ public class Diagnostico {
 		-Primeramente muestra las enfermedades con sus ID´s asociados.
 		-El usuario debe introducir el ID de la enfermedad deseada.
 		-Se muestran los síntomas asociados a la enfermedad.
-	*/
+	 */
 	private void listarSintomasEnfermedad() throws Exception {
 		try {
 			conectar();
@@ -505,8 +439,8 @@ public class Diagnostico {
 		-Método que muestra una lista de enfermedades con sus con sus códigos
 		asociados de la tabla Source.
 		-Se crea un Statement que muestra la lista con la información deseada.
-	*/
-	
+	 */
+
 	private void listarEnfermedadesYCodigosAsociados() throws Exception {
 		try {
 			conectar();
@@ -527,10 +461,10 @@ public class Diagnostico {
 		}
 
 	}
-	
+
 	/*Método listarSintomasYTiposSemanticos():
 		-Muestra una lista con los sintomas y los tipos semanticos asociados.
-	*/
+	 */
 	private void listarSintomasYTiposSemanticos() throws Exception { 
 		try {
 			conectar();
@@ -555,103 +489,103 @@ public class Diagnostico {
 	}
 
 	private void mostrarEstadisticasBD() throws Exception {
-        try {
-            conectar();
-            System.out.println("---ESTADISTICAS---");
+		try {
+			conectar();
+			System.out.println("---ESTADISTICAS---");
 
-            //Sacamos el numero de enfermedades
-            String numEnfermedades= "SELECT (disease_id) "
-                    + "FROM diagnostico.disease;";
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery(numEnfermedades);//ids de enfermedades
-            int contador = 0;
-            while(rs.next()) {
-                contador ++;
-            }
-            System.out.println("El numero de enfermedades es: "+ contador);
-            
-            
-            //Sacamos el numero de sintomas
-            String numSintomas= "SELECT symptom.cui "
-                    + "FROM diagnostico.symptom;";
-            Statement st1 = conn.createStatement();
-            ResultSet rs1 = st1.executeQuery(numSintomas);//ids de sintomas
-            int cont = 0;
-            while(rs1.next()) {
-                cont++;
-                
-            }
-            System.out.println("El numero de sintomas es: " + cont);
-            
-            //Sacamos la enfermedad con mas sintomas y su numero de sintomas
-            String valoresMax = "SELECT t1.name, COUNT(*) AS cont " +
-                    "FROM disease AS t1 " +
-                    "INNER JOIN disease_symptom AS t2 ON t1.disease_id = t2.disease_id " +
-                    "GROUP BY t1.disease_id "+
-                    "ORDER BY cont ASC;";
-            Statement st3 = conn.createStatement();
-            ResultSet rs3 = st3.executeQuery(valoresMax);
-            
-            
-            String enfMaxSint = null;
-            int n=0; //Contador de enfermedades
-            while (rs3.next()){
-                enfMaxSint = rs3.getString(1);
-                n= rs3.getInt(2);
-            }
-            System.out.println("Enfermedad con mas sintomas: " + enfMaxSint);
-            System.out.println("Numero de sintomas de la enfermedad: " + n);
-            
-            //Sacamos de forma analoga la enfermedad con menos sintomas y su numero de sintomas
-            String valoresMin = "SELECT t1.name, COUNT(*) AS con " +
-                    "FROM disease AS t1 " +
-                    "INNER JOIN disease_symptom AS t2 ON t1.disease_id = t2.disease_id " +
-                    "GROUP BY t1.disease_id "+
-                    "ORDER BY con DESC;";
-            Statement st4 = conn.createStatement();
-            ResultSet rs4 = st4.executeQuery(valoresMin);
-            String enfMinSint = null;
-            int nMin=0; //Contador de enfermedades
-            while (rs4.next()){
-                enfMinSint = rs4.getString(1);
-                nMin = rs4.getInt(2);
-            }
-            System.out.println("Enfermedad con menos sintomas: " + enfMinSint);
-            System.out.println("Numero de sintomas de la enfermedad: " + nMin);
-            
-            //Sacamos el numero medio de enfermedades
-            String average = "SELECT AVG(x) FROM "+
-            "(SELECT COUNT(*) AS x FROM disease_symptom GROUP BY disease_id) AS _;";
-            Statement st5 = conn.createStatement();
-            ResultSet rs5 = st5.executeQuery(average);
-            int av=0;
-            while(rs5.next()){
-                av=rs5.getInt(1);
-            }
-            
-            System.out.println("Numero medio de sintomas: " + av);
-            System.out.println("\n");
-            
-            //Sacamos los semantic_types y cuantos sintomas hay en cada semantic type
-            String semanticTypes= "SELECT t2.cui, COUNT(*) as cont "+
-            "FROM symptom_semantic_type AS t1 " +
-            "INNER JOIN semantic_type AS t2 ON t1.semantic_type_id = t2.semantic_type_id "+
-            "GROUP BY t1.semantic_type_id ORDER BY cont DESC";
-            Statement st6 = conn.createStatement();
-            ResultSet rs6 = st6.executeQuery(semanticTypes);
-            String sem = null;
-            String tipo=null;
-            while(rs6.next()){
-                sem = rs6.getString(1);
-                tipo=rs6.getString(2);
-                System.out.println("CodigoSemantico: "+ sem + " Tipo: " + tipo);
-            }
-      
-        }
-        catch(SQLException ex){
-            System.err.println(ex.getMessage());
-        }
-    }
+			//Sacamos el numero de enfermedades
+			String numEnfermedades= "SELECT (disease_id) "
+					+ "FROM diagnostico.disease;";
+			Statement st = conn.createStatement();
+			ResultSet rs = st.executeQuery(numEnfermedades);//ids de enfermedades
+			int contador = 0;
+			while(rs.next()) {
+				contador ++;
+			}
+			System.out.println("El numero de enfermedades es: "+ contador);
+
+
+			//Sacamos el numero de sintomas
+			String numSintomas= "SELECT symptom.cui "
+					+ "FROM diagnostico.symptom;";
+			Statement st1 = conn.createStatement();
+			ResultSet rs1 = st1.executeQuery(numSintomas);//ids de sintomas
+			int cont = 0;
+			while(rs1.next()) {
+				cont++;
+
+			}
+			System.out.println("El numero de sintomas es: " + cont);
+
+			//Sacamos la enfermedad con mas sintomas y su numero de sintomas
+			String valoresMax = "SELECT t1.name, COUNT(*) AS cont " +
+					"FROM disease AS t1 " +
+					"INNER JOIN disease_symptom AS t2 ON t1.disease_id = t2.disease_id " +
+					"GROUP BY t1.disease_id "+
+					"ORDER BY cont ASC;";
+			Statement st3 = conn.createStatement();
+			ResultSet rs3 = st3.executeQuery(valoresMax);
+
+
+			String enfMaxSint = null;
+			int n=0; //Contador de enfermedades
+			while (rs3.next()){
+				enfMaxSint = rs3.getString(1);
+				n= rs3.getInt(2);
+			}
+			System.out.println("Enfermedad con mas sintomas: " + enfMaxSint);
+			System.out.println("Numero de sintomas de la enfermedad: " + n);
+
+			//Sacamos de forma analoga la enfermedad con menos sintomas y su numero de sintomas
+			String valoresMin = "SELECT t1.name, COUNT(*) AS con " +
+					"FROM disease AS t1 " +
+					"INNER JOIN disease_symptom AS t2 ON t1.disease_id = t2.disease_id " +
+					"GROUP BY t1.disease_id "+
+					"ORDER BY con DESC;";
+			Statement st4 = conn.createStatement();
+			ResultSet rs4 = st4.executeQuery(valoresMin);
+			String enfMinSint = null;
+			int nMin=0; //Contador de enfermedades
+			while (rs4.next()){
+				enfMinSint = rs4.getString(1);
+				nMin = rs4.getInt(2);
+			}
+			System.out.println("Enfermedad con menos sintomas: " + enfMinSint);
+			System.out.println("Numero de sintomas de la enfermedad: " + nMin);
+
+			//Sacamos el numero medio de enfermedades
+			String average = "SELECT AVG(x) FROM "+
+					"(SELECT COUNT(*) AS x FROM disease_symptom GROUP BY disease_id) AS _;";
+			Statement st5 = conn.createStatement();
+			ResultSet rs5 = st5.executeQuery(average);
+			int av=0;
+			while(rs5.next()){
+				av=rs5.getInt(1);
+			}
+
+			System.out.println("Numero medio de sintomas: " + av);
+			System.out.println("\n");
+
+			//Sacamos los semantic_types y cuantos sintomas hay en cada semantic type
+			String semanticTypes= "SELECT t2.cui, COUNT(*) as cont "+
+					"FROM symptom_semantic_type AS t1 " +
+					"INNER JOIN semantic_type AS t2 ON t1.semantic_type_id = t2.semantic_type_id "+
+					"GROUP BY t1.semantic_type_id ORDER BY cont DESC";
+			Statement st6 = conn.createStatement();
+			ResultSet rs6 = st6.executeQuery(semanticTypes);
+			String sem = null;
+			String tipo=null;
+			while(rs6.next()){
+				sem = rs6.getString(1);
+				tipo=rs6.getString(2);
+				System.out.println("CodigoSemantico: "+ sem + " Tipo: " + tipo);
+			}
+
+		}
+		catch(SQLException ex){
+			System.err.println(ex.getMessage());
+		}
+	}
 	/**
 	 * M?todo para leer n?meros enteros de teclado.
 	 * 
@@ -699,6 +633,62 @@ public class Diagnostico {
 		}
 		bL.close();
 		return data;
+	}
+	
+	/*Método realizarActualizacion():
+	-
+ */
+	
+	private int realizarActualizacion(String consulta, Object... params) throws SQLException {
+		try (PreparedStatement st = conn.prepareStatement(consulta)) {
+			for (int i = 0; i < params.length; i++) {
+				st.setObject(i + 1, params[i]);
+			}
+			return st.executeUpdate();
+		}
+	}
+
+	private List<Object[]> realizarConsulta(String consulta, Object... params) throws SQLException {
+		try (PreparedStatement st = conn.prepareStatement(consulta)) {
+			for (int i = 0; i < params.length; i++) {
+				st.setObject(i + 1, params[i]);
+			}
+
+			try (ResultSet list = st.executeQuery()) {
+				int contCol = list.getMetaData().getColumnCount();
+				List<Object[]> results = new LinkedList<>();
+
+				while(list.next()) {
+					Object[] cols = new Object[contCol];
+					for (int i = 0; i < contCol; i++) {
+						cols[i] = list.getObject(i + 1);
+					}
+					results.add(cols);
+				}
+				return results;
+			}
+		}
+	}
+
+	/* Metodo que devuelve el ultimo valor incrementado añadido en la base de datos */
+	private int ultimoIncrementado() throws SQLException {
+		return ((Number)realizarConsulta("SELECT LAST_INSERT_ID()").get(0)[0]).intValue();
+	}
+	
+	private void listarSintomas(){
+		String todo = "SELECT (Symptom.name) "
+				+ "FROM diagnostico.symptom ORDER BY name ASC;";
+		Statement st;
+		try {
+			st = conn.createStatement();
+			ResultSet rs = st.executeQuery(todo);
+			while(rs.next()){
+				System.out.println("Sintoma: "+ rs.getObject(1));
+				System.out.println("\n");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String args[]) {
