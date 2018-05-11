@@ -344,13 +344,18 @@ public class Diagnostico {
 
 			//Tabla symptom_semantic_type
 
+   			String query6 = "INSERT INTO diagnostico.symptom_semantic_type (semantic_type, cui) VALUES (?,?)";
+   			PreparedStatement pst6=conn.prepareStatement(query6);
+   			for(int i=0;i<sinRepetidos.size();i++){
+   			 	String id = "SELECT semantic_type.semantic_type_id FROM diagnostico.semantic_type WHERE cui= " + sinRepetidos.get(i).semType +";" ;
+    				Statement st = conn.createStatement();
+    				ResultSet rs = st.executeQuery(id);
+    				rs.first();
+    				pst6.setString(1, sinRepetidos.get(i).codSintoma);
+   				pst6.setInt(2, rs.getInt(1));
+    				pst6.executeUpdate();
+   			}
 
-			String query6 = "INSERT INTO diagnostico.symptom_semantic_type (cui) VALUES (?)";
-			PreparedStatement pst6=conn.prepareStatement(query6);
-			for(int i=0;i<sinRepetidos.size();i++){
-				pst6.setString(1, sinRepetidos.get(i).codSintoma);
-				pst6.executeUpdate();
-			}
 
 
 
